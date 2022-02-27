@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  devcontainer:
+    image: brutalsimplicity/devcontainer:v1.0.0
+    volumes:
+      # The project will be hosted here
+      - ../:/root/workspace:cached
+
+      # Prevents host node_modules from being mounted in
+      # the container
+      - node_modules:/root/workspace/node_modules
+
+      # Add your AWS config for access within the dev container
+      - '${HOME}/.aws:/root/.aws'
+
+      # Add your SSH key pairs so that git and other SSH services work
+      - '${HOME}/.ssh:/root/.ssh'
+
+      # Installed extensions can be saved here to avoid repetitive installs
+      # NOTE: ~ expansion may not work with docker compose
+      - ${HOME}/.devcontainer/extensions:/root/.vscode-server/extensions
+
+      # Installed language environments can be saved to host to retain additional environments created
+      # beyond those supplied by the docker image. These are managed through asdf, so you only
+      # need to save the subdirectory managed under the home folder (/root in this case)
+      # NOTE: ~ expansion may not work with docker compose
+      # - ${HOME}/.devcontainer/.asdf:/root/.asdf
+
+volumes:
+  workspace:
+  extensions:
+  node_modules:

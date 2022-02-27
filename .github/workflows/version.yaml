@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Version
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  version:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CICD_TOKEN }}
+      - run: npm ci
+      - run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "no-reply@github.com"
+      - run: npx nx affected --target=version --base=$(git describe --tags --abbrev=0) --head=main --push
