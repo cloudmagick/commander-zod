@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "projects": {
+    "commander-zod": "packages/commander-zod"
+  }
+}

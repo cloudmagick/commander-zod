@@ -1,0 +1,36 @@
+{
+  "root": "packages/commander-zod",
+  "sourceRoot": "packages/commander-zod/src",
+  "projectType": "library",
+  "targets": {
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["packages/commander-zod/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/packages/commander-zod"],
+      "options": {
+        "jestConfig": "packages/commander-zod/jest.config.js",
+        "passWithNoTests": true,
+        "codeCoverage": true,
+        "coverageReporters": ["text", "clover", "html"]
+      }
+    },
+    "build": {
+      "executor": "@nrwl/node:package",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/commander-zod",
+        "tsConfig": "packages/commander-zod/tsconfig.lib.json",
+        "packageJson": "packages/commander-zod/package.json",
+        "main": "packages/commander-zod/src/index.ts",
+        "assets": ["packages/commander-zod/*.md"]
+      }
+    }
+  },
+  "tags": []
+}
