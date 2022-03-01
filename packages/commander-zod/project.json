@@ -16,8 +16,7 @@
       "options": {
         "jestConfig": "packages/commander-zod/jest.config.js",
         "passWithNoTests": true,
-        "codeCoverage": true,
-        "coverageReporters": ["text", "clover", "html"]
+        "codeCoverage": true
       }
     },
     "build": {
@@ -29,6 +28,12 @@
         "packageJson": "packages/commander-zod/package.json",
         "main": "packages/commander-zod/src/index.ts",
         "assets": ["packages/commander-zod/*.md"]
+      }
+    },
+    "version": {
+      "executor": "@jscutlery/semver:version",
+      "options": {
+        "commitMessageFormat": "chore(${projectName}): release version ${version}"
       }
     }
   },

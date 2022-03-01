@@ -2,7 +2,7 @@ import { Help } from 'commander';
 import { z } from 'zod';
 import { CommandProps } from '../src';
 import { Command } from '../src/lib/command';
-import { testLog } from './testkit';
+import { testLog } from './testkit/testkit';
 
 it('should call action handler with no parameters', () => {
   const command = Command.create({
@@ -38,8 +38,8 @@ it('should generate help with required arguments', () => {
   const helper = new Help();
   const actual = {
     command: {
-      usage: helper.commandUsage(command.base),
-      description: helper.commandDescription(command.base),
+      usage: helper.commandUsage(command),
+      description: helper.commandDescription(command),
     },
     arguments: {
       foo: {
@@ -102,8 +102,8 @@ it('should generate help with required arguments and options', () => {
   const helper = new Help();
   const actual = {
     command: {
-      usage: helper.commandUsage(command as Command),
-      description: helper.commandDescription(command as Command),
+      usage: helper.commandUsage(command),
+      description: helper.commandDescription(command),
     },
     arguments: {
       foo: {
@@ -191,8 +191,8 @@ it('should generate help with required, optional, variadic, negated, default, an
   const helper = new Help();
   const actual = {
     command: {
-      usage: helper.commandUsage(command.base),
-      description: helper.commandDescription(command.base),
+      usage: helper.commandUsage(command),
+      description: helper.commandDescription(command),
     },
     arguments: {
       foo: {
@@ -402,7 +402,7 @@ it('should pass options from preAction hook to nested commmands', () => {
 
   Command.create({
     name: 'nested',
-    parentCommand: parent.base,
+    parentCommand: parent,
     parameters: {
       fizz: {
         type: 'option',
@@ -460,7 +460,7 @@ it('should call async nested actions', async () => {
     .enablePositionalOptions();
   Command.create({
     name: 'nested1',
-    parentCommand: parent.base,
+    parentCommand: parent,
     fromConfig: () => ({
       foo: '1',
       bar: '2',
@@ -492,7 +492,7 @@ it('should call async nested actions', async () => {
 
   Command.create({
     name: 'nested2',
-    parentCommand: parent.base,
+    parentCommand: parent,
     parameters: {
       fizz: {
         type: 'option',
@@ -539,51 +539,4 @@ it('should call async nested actions', async () => {
     '6',
   ]);
   expect.assertions(2);
-});
-
-it('should allow additional parameters configured via Commander', async () => {
-  const numberSchema = z
-    .string()
-    .transform(async (v) => await Promise.resolve(parseInt(v)));
-  const actual = {} as CommandProps;
-  const command = Command.create({
-    name: 'command',
-    fromConfig: () => ({
-      foo: '1',
-      bar: '2',
-    }),
-    parameters: {
-      foo: {
-        type: 'argument',
-        required: true,
-        schema: numberSchema,
-      },
-      bar: {
-        type: 'option',
-        schema: numberSchema.optional(),
-      },
-    },
-  })
-    .option('--fizz <fizz>', 'fizz desc', (value) => parseInt(value))
-    .option('--buzz [buzz]', 'buzz desc', (value) => parseInt(value))
-    .action(async (props, extras) => {
-      actual.props = { ...props };
-      actual.extras = { ...extras };
-    });
-
-  await command.parseAsync(['node', 'test', '--fizz', '3', '--buzz', '4']);
-
-  expect(actual).toEqual({
-    props: {
-      foo: 1,
-      bar: 2,
-    },
-    extras: {
-      args: [],
-      props: {
-        fizz: 3,
-        buzz: 4,
-      },
-    },
-  });
 });

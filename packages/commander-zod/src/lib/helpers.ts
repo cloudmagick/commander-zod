@@ -38,7 +38,12 @@ export function getParameterNames(
     param: dashifyName(name),
     alias: (names as ParameterNameDefinitions)?.alias,
     config: names?.config ?? name,
-    env: names?.env ?? environmentName(name, envPrefix),
+    env:
+      (typeof definition.environment == 'string'
+        ? definition.environment
+        : null) ??
+      names?.env ??
+      environmentName(name, envPrefix),
   } as Required<ParameterNameDefinitions>;
 }
 
@@ -102,10 +107,21 @@ export function mergeArgumentsFromConfig(
   src: string[],
   args: Record<string, ParameterContext>
 ) {
-  const resolvedArgumentValues = sortArguments(args, (arg) => arg.definition)
-    .flatMap((arg) => arg.value as string | string[])
-    .filter((arg) => !!arg);
-  return [...src, ...resolvedArgumentValues.slice(src.length)];
+  const resolvedArgumentValues = sortArguments(
+    args,
+    (arg) => arg.definition
+  ).flatMap((arg) => arg.value as string | string[]);
+  const result = [];
+  const maxLength =
+    src.length < resolvedArgumentValues.length
+      ? resolvedArgumentValues.length
+      : src.length;
+  for (let index = 0; index < maxLength; index++) {
+    const argValue = src[index] ? src[index] : resolvedArgumentValues[index];
+    if (!argValue) continue;
+    result.push(argValue);
+  }
+  return result;
 }
 
 function isLowerCase(str: string) {

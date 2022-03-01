@@ -35,7 +35,6 @@ export class Command extends BaseCommand {
     options: {},
     parameters: {},
   };
-  private _usePromise = false;
   private _shouldUsePromise = false;
 
   constructor(config: CommandDefinition) {
@@ -60,7 +59,6 @@ export class Command extends BaseCommand {
     if (this._definition.parentCommand) {
       if (this._definition.parentCommand) {
         this._definition.parentCommand.addCommand(this);
-        this.copyInheritedSettings(this._definition.parentCommand);
       }
     }
     const parameters = this._definition.parameters ?? {};
@@ -78,12 +76,6 @@ export class Command extends BaseCommand {
     const argument = new Argument(name, definition.description);
     argument.required = definition.required ?? true;
     argument.variadic = definition.variadic ?? false;
-    definition.names =
-      definition.environment && typeof definition.environment == 'string'
-        ? {
-            env: definition.environment,
-          }
-        : undefined;
     definition.names = getParameterNames(
       name,
       definition,
@@ -110,12 +102,6 @@ export class Command extends BaseCommand {
     const optionDefinition = definition as OptionDefinition;
     const optionFlags = createOptionFlags(name, definition);
     const option = new Option(optionFlags, definition.description);
-    definition.names =
-      definition.environment && typeof definition.environment == 'string'
-        ? {
-            env: definition.environment,
-          }
-        : undefined;
     definition.names = getParameterNames(
       name,
       definition,
@@ -264,21 +250,52 @@ export class Command extends BaseCommand {
     };
   }
 
-  copyInheritedSettings(sourceCommand: BaseCommand): this {
-    const command = sourceCommand as Command;
-    if ('_usePromise' in command) {
-      command._usePromise = this._usePromise;
-    }
+  override addOption(option: Option): this {
+    super.addOption(option);
+
+    const name = option.attributeName();
+    const definition: ParameterDefinition = {
+      type: 'option',
+      required: option.required ?? false,
+      variadic: option.variadic,
+      description: option.description,
+      negate: option.negate,
+      defaultValue: option.defaultValue,
+    };
+    definition.names = getParameterNames(name, definition);
+    this.context.parameters[name] = this.context.options[name] = {
+      type: 'option',
+      name,
+      definition,
+      parameter: option,
+      value: null,
+    };
+
     return this;
   }
 
-  override action(
-    fn: (
-      props: unknown,
-      extras: ExtraProps['extras'],
-      command: BaseCommand
-    ) => void | Promise<void>
-  ): this {
+  override addArgument(arg: Argument): this {
+    super.addArgument(arg);
+    const definition: ParameterDefinition = {
+      type: 'argument',
+      required: arg.required ?? false,
+      variadic: arg.variadic,
+      description: arg.description,
+    };
+    const name = arg.name();
+    definition.names = getParameterNames(name, definition);
+    this.context.parameters[name] = this.context.arguments[name] = {
+      type: 'argument',
+      name,
+      definition,
+      parameter: arg,
+      value: null,
+    };
+
+    return this;
+  }
+
+  override action(fn: (...args: any[]) => void | Promise<void>): this {
     super.action(() => {
       if (this._shouldUsePromise) {
         return this.parsePropsAsync().then((props) =>
@@ -377,12 +394,23 @@ export class ActionCommand<
       command: BaseCommand
     ) => void | Promise<void>
   ): this {
-    return super.action(
-      fn as (
-        props: unknown,
-        extras: ExtraProps['extras'],
-        command: BaseCommand
-      ) => void | Promise<void>
-    );
+    return super.action(fn);
   }
+}
+
+export interface ActionCommand<TDefinition extends CommandDefinition>
+  extends BaseCommand {
+  hook(
+    event: HookEvent,
+    listener: (
+      props: CommandProps<TDefinition>['props'],
+      extras: CommandProps<TDefinition>['extras'],
+      thisCommand: BaseCommand,
+      actionCommand: BaseCommand
+    ) => void | Promise<void>
+  ): this;
+  hook(
+    event: HookEvent,
+    listener: (...args: any[]) => void | Promise<void>
+  ): this;
 }

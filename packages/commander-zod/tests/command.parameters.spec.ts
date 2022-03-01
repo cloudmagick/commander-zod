@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { CommandProps } from '../src';
 import { Command } from '../src/lib/command';
-import { testLog } from './testkit';
+import { testLog } from './testkit/testkit';
 
 const originalEnv = process.env;
 
@@ -392,6 +393,62 @@ it('should allow custom configuration of parameters via commander', () => {
     args: ['three'],
     opts: {
       bar: true,
+    },
+  });
+});
+
+it('should allow additional parameters configured via Commander', async () => {
+  const numberSchema = z
+    .string()
+    .transform(async (v) => await Promise.resolve(parseInt(v)));
+  const actual = {} as CommandProps;
+  const command = Command.create({
+    name: 'command',
+    fromConfig: () => ({
+      foo: '1',
+      bar: '2',
+    }),
+    parameters: {
+      foo: {
+        type: 'argument',
+        required: true,
+        schema: numberSchema,
+      },
+      bar: {
+        type: 'option',
+        schema: numberSchema.optional(),
+      },
+    },
+  })
+    .argument('<arg>', 'arg desc')
+    .option('--fizz <fizz>', 'fizz desc', (value) => parseInt(value))
+    .option('--buzz [buzz]', 'buzz desc', (value) => parseInt(value))
+    .action(async (props, extras) => {
+      actual.props = { ...props };
+      actual.extras = { ...extras };
+    });
+
+  await command.parseAsync([
+    'node',
+    'test',
+    'arg',
+    '--fizz',
+    '3',
+    '--buzz',
+    '4',
+  ]);
+
+  expect(actual).toEqual({
+    props: {
+      foo: 1,
+      bar: 2,
+      fizz: 3,
+      buzz: 4,
+      arg: 'arg',
+    },
+    extras: {
+      args: [],
+      props: {},
     },
   });
 });

@@ -55,122 +55,122 @@ describe('mergeArgumentsFromConfig', () => {
     });
     expect(actual).toEqual([1, 2, 3, 4]);
   });
-});
-it('should merge arguments from config in proper order when source arguments exist (required, optional, variadic)', () => {
-  const actual = mergeArgumentsFromConfig(['1', '2', '3'], {
-    foo: {
-      name: 'foo',
-      type: 'argument',
-      definition: {
+  it('should merge arguments from config in proper order when source arguments exist (required, optional, variadic)', () => {
+    const actual = mergeArgumentsFromConfig(['1', '2', '3'], {
+      foo: {
+        name: 'foo',
         type: 'argument',
-        required: true,
+        definition: {
+          type: 'argument',
+          required: true,
+        },
+        parameter: new Argument('foo'),
+        value: 1,
       },
-      parameter: new Argument('foo'),
-      value: 1,
-    },
-    bar: {
-      name: 'bar',
-      type: 'argument',
-      definition: {
+      bar: {
+        name: 'bar',
         type: 'argument',
-        required: false,
+        definition: {
+          type: 'argument',
+          required: false,
+        },
+        parameter: new Argument('bar'),
+        value: 3,
       },
-      parameter: new Argument('bar'),
-      value: 3,
-    },
-    fizz: {
-      name: 'fizz',
-      type: 'argument',
-      definition: {
+      fizz: {
+        name: 'fizz',
         type: 'argument',
-        required: false,
-        variadic: true,
+        definition: {
+          type: 'argument',
+          required: false,
+          variadic: true,
+        },
+        parameter: new Argument('fizz'),
+        value: 4,
       },
-      parameter: new Argument('fizz'),
-      value: 4,
-    },
-    buzz: {
-      name: 'buzz',
-      type: 'argument',
-      definition: {
+      buzz: {
+        name: 'buzz',
         type: 'argument',
-        required: true,
+        definition: {
+          type: 'argument',
+          required: true,
+        },
+        parameter: new Argument('buzz'),
+        value: 2,
       },
-      parameter: new Argument('buzz'),
-      value: 2,
-    },
+    });
+    expect(actual).toEqual(['1', '2', '3', 4]);
   });
-  expect(actual).toEqual(['1', '2', '3', 4]);
-});
-it('should merge arguments from config in proper order with expanded variadic arguments', () => {
-  const actual = mergeArgumentsFromConfig(['1'], {
-    foo: {
-      name: 'foo',
-      type: 'argument',
-      definition: {
+  it('should merge arguments from config in proper order with expanded variadic arguments', () => {
+    const actual = mergeArgumentsFromConfig(['1'], {
+      foo: {
+        name: 'foo',
         type: 'argument',
-        required: true,
+        definition: {
+          type: 'argument',
+          required: true,
+        },
+        parameter: new Argument('foo'),
+        value: 1,
       },
-      parameter: new Argument('foo'),
-      value: 1,
-    },
-    bar: {
-      name: 'bar',
-      type: 'argument',
-      definition: {
+      bar: {
+        name: 'bar',
         type: 'argument',
-        required: true,
+        definition: {
+          type: 'argument',
+          required: true,
+        },
+        parameter: new Argument('bar'),
+        value: [2, 3, 4, 5],
       },
-      parameter: new Argument('bar'),
-      value: [2, 3, 4, 5],
-    },
+    });
+    expect(actual).toEqual(['1', 2, 3, 4, 5]);
   });
-  expect(actual).toEqual(['1', 2, 3, 4, 5]);
-});
-it('should merge arguments from config with preserved order for required and optional arguments', () => {
-  const actual = mergeArgumentsFromConfig([], {
-    foo: {
-      name: 'foo',
-      type: 'argument',
-      definition: {
+  it('should merge arguments from config with preserved order for required and optional arguments', () => {
+    const actual = mergeArgumentsFromConfig([], {
+      foo: {
+        name: 'foo',
         type: 'argument',
-        required: true,
+        definition: {
+          type: 'argument',
+          required: true,
+        },
+        parameter: new Argument('foo'),
+        value: 1,
       },
-      parameter: new Argument('foo'),
-      value: 1,
-    },
-    bar: {
-      name: 'bar',
-      type: 'argument',
-      definition: {
+      bar: {
+        name: 'bar',
         type: 'argument',
-        required: true,
+        definition: {
+          type: 'argument',
+          required: true,
+        },
+        parameter: new Argument('bar'),
+        value: 2,
       },
-      parameter: new Argument('bar'),
-      value: 2,
-    },
-    fizz: {
-      name: 'fizz',
-      type: 'argument',
-      definition: {
+      fizz: {
+        name: 'fizz',
         type: 'argument',
-        required: false,
+        definition: {
+          type: 'argument',
+          required: false,
+        },
+        parameter: new Argument('fizz'),
+        value: 3,
       },
-      parameter: new Argument('fizz'),
-      value: 3,
-    },
-    buzz: {
-      name: 'buzz',
-      type: 'argument',
-      definition: {
+      buzz: {
+        name: 'buzz',
         type: 'argument',
-        required: false,
+        definition: {
+          type: 'argument',
+          required: false,
+        },
+        parameter: new Argument('buzz'),
+        value: 4,
       },
-      parameter: new Argument('buzz'),
-      value: 4,
-    },
+    });
+    expect(actual).toEqual([1, 2, 3, 4]);
   });
-  expect(actual).toEqual([1, 2, 3, 4]);
 });
 describe('dashifyName', () => {
   it('should dashify camelCase (canonical use case)', () => {

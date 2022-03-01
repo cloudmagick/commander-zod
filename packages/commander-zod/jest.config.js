@@ -1,15 +1,8 @@
+const baseConfigFn = require('../../jest.base.config');
+
+/** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
+  ...baseConfigFn('commander-zod'),
   displayName: 'commander-zod',
-  preset: '../../jest.preset.js',
-  globals: {
-    'ts-jest': {
-      tsconfig: '<rootDir>/tsconfig.spec.json',
-    },
-  },
-  testEnvironment: 'node',
-  transform: {
-    '^.+\\.[tj]sx?$': 'ts-jest',
-  },
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
-  coverageDirectory: '../../coverage/packages/commander-zod',
+  testPathIgnorePatterns: ['<rootDir>/tests/testkit'],
 };
