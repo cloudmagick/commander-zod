@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Version
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  version:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-20.04
+    steps:
+      - run: npm ci
+      - run: nx affected --target=version --all
