@@ -75,6 +75,9 @@ export type ParameterDefinition = {
   /** Provide a default value for the parameter */
   defaultValue?: unknown;
 
+  /** List of valid choices for the parameter */
+  choices?: string[];
+
   /** Invidual parameter environment flag
    *
    * This can be a boolean to use the default environment name translation
