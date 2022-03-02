@@ -1,9 +1,13 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Test and Lint
 
-on: ['push']
+on:
+  push:
+    branches-ignore:
+      - main
 
 jobs:
-  test:
+  test-multi-version:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -19,11 +23,6 @@ jobs:
       - run: npm  install typescript@${{ matrix.typescript }} --save-dev
       - run: npx nx run-many --target=build --all
       - run: npx nx run-many --target=test --all
-      - uses: actions/upload-artifact@v2
-        if: success() || failure()
-        with:
-          name: test-results
-          path: coverage/**/junit*.xml
 
   lint:
     runs-on: ubuntu-20.04

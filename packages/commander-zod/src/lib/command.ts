@@ -399,7 +399,7 @@ export class ActionCommand<
 }
 
 export interface ActionCommand<TDefinition extends CommandDefinition>
-  extends BaseCommand {
+  extends Command {
   hook(
     event: HookEvent,
     listener: (

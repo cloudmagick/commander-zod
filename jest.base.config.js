@@ -2,9 +2,6 @@ const path = require('path');
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = (name) => {
   const coverageDirectory = path.join(__dirname, 'coverage', 'packages', name);
-  console.log({
-    coverageDirectory,
-  });
   return {
     testMatch: ['**/+(*.)+(spec|test).+(ts|js)?(x)'],
     moduleFileExtensions: ['ts', 'js', 'mjs', 'html'],
