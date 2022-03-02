@@ -14,7 +14,8 @@ jobs:
       - uses: actions/checkout@v2
       - run: npm ci
       - run: |
+          ::echo::on
           git status
           git fetch 
           git branch
-          npx nx affected --target=version --base main --head ${{ github.head_ref }}
+          npx nx affected --target=version --base main --head ${{ github.sha }}
