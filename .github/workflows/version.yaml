@@ -18,4 +18,5 @@ jobs:
           git status
           git fetch 
           git branch
-          npx nx affected --target=version --base main --head ${{ github.sha }}
+          git describe --tags --abbrev=0
+          npx nx affected --target=version --base main --head $(git describe --tags --abbrev=0)
