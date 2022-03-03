@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Version
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  version:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CICD_TOKEN }}
+      - name: NPM Install
+        run: npm ci
+      - name: Apply Semantic Version
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "no-reply@github.com"
+          npx nx affected --target=version --base=$(git describe --tags --abbrev=0) --head=main --push

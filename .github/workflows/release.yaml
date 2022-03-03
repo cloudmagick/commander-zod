@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Release
+
+on:
+  push:
+    tags:
+      - '**[0-9]+.[0-9]+.[0-9]+**'
+
+jobs:
+  build_artifact:
+    name: Build Release Artifact
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: NPM Install
+        run: npm ci
+      - id: project_info
+        name: Parse Project Info
+        run: |
+          PROJECT=$(echo ${{ github.ref_name }} | perl -pe 's|(.*?)[-_+]?(\d+\.\d+\.\d+)[-_+]?(.*)|\1|')
+          VERSION=$(echo ${{ github.ref_name }} | perl -pe 's|(.*?)[-_+]?(\d+\.\d+\.\d+)[-_+]?(.*)|\2|')
+          SUFFIX=$(echo ${{ github.ref_name }} | perl -pe 's|(.*?)[-_+]?(\d+\.\d+\.\d+)[-_+]?(.*)|\3|')
+          PROJECT_REL_PATH=$(cat workspace.json | jq -r ".projects[\"$PROJECT\"]")
+          PROJECT_PATH=$(pwd)/$PROJECT_REL_PATH
+          DIST_PATH=$(pwd)/dist/$PROJECT_REL_PATH
+          echo "::echo::on"
+          echo "::set-output name=name::$PROJECT"
+          echo "::set-output name=version::$VERSION"
+          echo "::set-output name=path::$PROJECT_PATH"
+          echo "::set-output name=dist::$DIST_PATH"
+          echo "::set-output name=suffix::$SUFFIX"
+      - name: Build Release for ${{ github.ref_name }}
+        run: |
+          npx nx run ${{ steps.project_info.outputs.name }}:build
+      - id: package
+        name: Create Release Package for ${{ github.ref_name }}
+        run: |
+          cd ${{ steps.project_info.outputs.dist }}
+          PACKAGE_NAME=$(npm pack)
+          PACKAGE_PATH=$(pwd)/$PACKAGE_NAME
+          echo "::echo::on"
+          echo "::set-output name=path::$PACKAGE_PATH"
+          echo "::set-output name=name::$PACKAGE_NAME"
+      - name: Create Release Artifact for ${{ github.ref_name }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.ref_name }}
+          path: ${{ steps.package.outputs.path }}
+    outputs:
+      project: ${{ steps.project_info.outputs.name }}
+      version: ${{ steps.project_info.outputs.version }}
+      suffix: ${{ steps.project_info.outputs.suffix }}
+      project_path: ${{ steps.project_info.outputs.path }}
+      dist_path: ${{ steps.project_info.outputs.dist }}
+      package_name: ${{ steps.package.outputs.name }}
+
+  create_release:
+    needs: [build_artifact]
+    name: Create Release
+    runs-on: ubuntu-20.04
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download Release Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ github.ref_name }}
+      - id: release
+        name: Create Release for ${{ github.ref_name}}
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: true
+          files: |
+            ${{ needs.build_artifact.outputs.package_name }}
+          fail_on_unmatched_files: true

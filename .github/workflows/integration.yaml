@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Test and Lint
+
+on:
+  push:
+    paths-ignore:
+      - .devcontainer/**
+      - .github/**
+      - .vscode/**
+      - .husky/**
+    branches-ignore:
+      - main
+
+jobs:
+  test-multi-version:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        node: [12, 14, 16]
+        typescript: ['4.3', '4.4', '4.5']
+    name: Test with TypeScript ${{ matrix.typescript }} on Node ${{ matrix.node }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - run: npm  install typescript@${{ matrix.typescript }} --save-dev
+      - run: npx nx run-many --target=build --all
+      - run: npx nx run-many --target=test --all
+
+  lint:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        node: ['14']
+    name: Lint on Node ${{ matrix.node }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - run: npx nx run-many --target=lint --all
