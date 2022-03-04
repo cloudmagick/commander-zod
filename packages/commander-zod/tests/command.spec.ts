@@ -1,8 +1,8 @@
 import { Help } from 'commander';
 import { z } from 'zod';
+import { testLog } from '../../../shared/testkit';
 import { CommandProps } from '../src';
 import { Command } from '../src/lib/command';
-import { testLog } from './testkit/testkit';
 
 it('should call action handler with no parameters', () => {
   const command = Command.create({
