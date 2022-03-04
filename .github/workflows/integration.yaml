@@ -20,25 +20,27 @@ jobs:
         typescript: ['4.3', '4.4', '4.5']
     name: Test with TypeScript ${{ matrix.typescript }} on Node ${{ matrix.node }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
-      - run: npm ci
-      - run: npm  install typescript@${{ matrix.typescript }} --save-dev
-      - run: npx nx run-many --target=build --all
-      - run: npx nx run-many --target=test --all
+      - name: NPM Install
+        run: npm ci
+      - name: Install Typescript ${{ matrix.typescript }}
+        run: npm  install typescript@${{ matrix.typescript }} --save-dev
+      - name: Build
+        run: npx nx run-many --target=build --all
+      - name: Install
+        run: npx nx run-many --target=test --all
 
   lint:
     runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        node: ['14']
-    name: Lint on Node ${{ matrix.node }}
+    name: Lint
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node }}
-      - run: npm ci
-      - run: npx nx run-many --target=lint --all
+      - name: NPM Install
+        run: npm ci
+      - name: Lint
+        run: npx nx run-many --target=lint --all
