@@ -3,12 +3,17 @@ const path = require('path');
 module.exports = (name) => {
   const coverageDirectory = path.join(__dirname, 'coverage', 'packages', name);
   return {
-    testMatch: ['**/+(*.)+(spec|test).+(ts|js)?(x)'],
-    moduleFileExtensions: ['ts', 'js', 'mjs', 'html'],
-    transform: {
-      '^.+\\.(ts|js)$': 'ts-jest',
+    resolver: '@nrwl/jest/plugins/resolver',
+    globals: {
+      'ts-jest': {
+        tsconfig: '<rootDir>/tsconfig.spec.json',
+      },
     },
-    moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+    testMatch: ['**/+(*.)+(spec|test).+(ts|js)?(x)'],
+    moduleFileExtensions: ['ts', 'js', 'jsx', 'tsx'],
+    transform: {
+      '^.+\\.(ts|js)x?$': 'ts-jest',
+    },
     reporters: [
       'default',
       [

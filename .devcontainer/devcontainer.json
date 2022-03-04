@@ -5,9 +5,13 @@
   "overrideCommand": true,
   "settings": {},
   "extensions": [
-    "nrwl.angular-console",
-    "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode"
+    "eamodio.gitlens",
+    "esbenp.prettier-vscode",
+    "firsttris.vscode-jest-runner",
+    "ms-azuretools.vscode-docker",
+    "nrwl.angular-console",
+    "rebornix.toggle",
+    "redhat.vscode-yaml"
   ]
 }

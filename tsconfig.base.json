@@ -17,7 +17,8 @@
     "baseUrl": ".",
     "strict": true,
     "paths": {
-      "commander-zod": ["packages/commander-zod/src/index.ts"]
+      "commander-zod": ["packages/commander-zod/src/index.ts"],
+      "testkit": ["shared/testkit/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

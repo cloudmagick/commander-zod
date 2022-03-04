@@ -1,7 +1,7 @@
+import { testLog } from 'testkit';
 import { z } from 'zod';
 import { CommandProps } from '../src';
 import { Command } from '../src/lib/command';
-import { testLog } from './testkit/testkit';
 
 const originalEnv = process.env;
 
