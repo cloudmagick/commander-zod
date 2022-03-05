@@ -452,3 +452,103 @@ it('should allow additional parameters configured via Commander', async () => {
     },
   });
 });
+
+it('should include in context all resolved argument and option values before running command', () => {
+  const command = Command.create({
+    name: 'args-parse-test',
+    parameters: {
+      foo: {
+        type: 'argument',
+        schema: z.string(),
+        required: true,
+      },
+      bar: {
+        type: 'argument',
+        schema: z.string(),
+        required: true,
+      },
+      fizz: {
+        type: 'option',
+      },
+      buzz: {
+        type: 'option',
+      },
+    },
+  });
+
+  command.parse([
+    'node',
+    'test',
+    'foo',
+    'bar',
+    '--fizz',
+    'fizz',
+    '--buzz',
+    'buzz',
+  ]);
+  const parameters = command.context.parameters;
+  const actual = {
+    foo: parameters.foo.value,
+    bar: parameters.bar.value,
+    fizz: parameters.fizz.value,
+    buzz: parameters.buzz.value,
+  };
+  expect(actual).toEqual({
+    foo: 'foo',
+    bar: 'bar',
+    fizz: 'fizz',
+    buzz: 'buzz',
+  });
+});
+
+it('should override source values with cli parameters', () => {
+  const command = Command.create({
+    name: 'args-parse-test',
+    useEnvironment: true,
+    parameters: {
+      foo: {
+        type: 'argument',
+        schema: z.string(),
+        required: true,
+        fromConfig: () => ({ foo: 'config' }),
+      },
+      bar: {
+        type: 'argument',
+        schema: z.string(),
+        required: true,
+      },
+      fizz: {
+        type: 'option',
+      },
+      buzz: {
+        type: 'option',
+      },
+    },
+  });
+
+  process.env['FIZZ'] = 'env';
+
+  command.parse([
+    'node',
+    'test',
+    'foo',
+    'bar',
+    '--fizz',
+    'fizz',
+    '--buzz',
+    'buzz',
+  ]);
+  const parameters = command.context.parameters;
+  const actual = {
+    foo: parameters.foo.value,
+    bar: parameters.bar.value,
+    fizz: parameters.fizz.value,
+    buzz: parameters.buzz.value,
+  };
+  expect(actual).toEqual({
+    foo: 'foo',
+    bar: 'bar',
+    fizz: 'fizz',
+    buzz: 'buzz',
+  });
+});

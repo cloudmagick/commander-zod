@@ -1,6 +1,8 @@
 import { Argument } from 'commander';
 import { z } from 'zod';
+import { ParameterContext } from '../src';
 import {
+  assignResolvedArgumentValues,
   dashifyName,
   environmentName,
   getParameterNames,
@@ -365,5 +367,81 @@ describe('splitParametersByName', () => {
         },
       },
     ]);
+  });
+});
+
+describe('assignResolvedArgumentValues', () => {
+  it('should assign parsed argument values', () => {
+    const args: Record<string, ParameterContext> = {
+      foo: {
+        type: 'argument',
+        name: 'foo',
+        definition: { type: 'argument' },
+        parameter: new Argument('foo'),
+        value: null,
+      },
+      bar: {
+        type: 'argument',
+        name: 'bar',
+        definition: { type: 'argument' },
+        parameter: new Argument('bar'),
+        value: null,
+      },
+      fizz: {
+        type: 'argument',
+        name: 'fizz',
+        definition: { type: 'argument', variadic: true },
+        parameter: new Argument('fizz'),
+        value: null,
+      },
+      buzz: {
+        type: 'argument',
+        name: 'buzz',
+        definition: { type: 'argument' },
+        parameter: new Argument('buzz'),
+        value: null,
+      },
+    };
+    assignResolvedArgumentValues(['1', '2', '3', '4', '5', '6'], args);
+    const actual = Object.values(args).flatMap((arg) => arg.value);
+
+    expect(actual).toEqual(['1', '2', '4', '5', '6', '3']);
+  });
+
+  it('should assign existing parsed argument values', () => {
+    const args: Record<string, ParameterContext> = {
+      foo: {
+        type: 'argument',
+        name: 'foo',
+        definition: { type: 'argument' },
+        parameter: new Argument('foo'),
+        value: null,
+      },
+      bar: {
+        type: 'argument',
+        name: 'bar',
+        definition: { type: 'argument' },
+        parameter: new Argument('bar'),
+        value: null,
+      },
+      fizz: {
+        type: 'argument',
+        name: 'fizz',
+        definition: { type: 'argument', variadic: true },
+        parameter: new Argument('fizz'),
+        value: null,
+      },
+      buzz: {
+        type: 'argument',
+        name: 'buzz',
+        definition: { type: 'argument' },
+        parameter: new Argument('buzz'),
+        value: null,
+      },
+    };
+    assignResolvedArgumentValues(['1', '2', '3'], args);
+    const actual = Object.values(args).flatMap((arg) => arg.value);
+
+    expect(actual).toEqual(['1', '2', null, '3']);
   });
 });

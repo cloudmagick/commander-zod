@@ -8,6 +8,7 @@ import {
   ParseOptionsResult,
 } from 'commander';
 import {
+  assignResolvedArgumentValues,
   createOptionFlags,
   createValidationSchema,
   getParameterNames,
@@ -128,14 +129,16 @@ export class Command extends BaseCommand {
   }
 
   private _addSourceHandlers() {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for (const [_, context] of Object.entries(this.context.parameters)) {
-      if (context.type == 'option' && context.definition.fromConfig) {
+    for (const entry of Object.entries(this.context.parameters)) {
+      const context = entry[1];
+      if (context.type == 'option') {
         this.on(`option:${context.name}`, (value: string) => {
           if (context.definition.fromConfig) {
             const results = context.definition.fromConfig(value);
             context.value = results;
             this._resolveParametersFromSource(results);
+          } else {
+            context.value = value;
           }
         });
       }
@@ -354,9 +357,14 @@ export class Command extends BaseCommand {
     this._handleFromConfigArguments(operands);
 
     // injecting parameters into arguments is not supported by commander
-    // so must be handled explicitly here with `mergeArgumentsConfig`
+    // so must be handled explicitly here with `mergeArgumentsFromConfig`
+    const resolvedOperands = mergeArgumentsFromConfig(
+      operands,
+      this.context.arguments
+    );
+    assignResolvedArgumentValues(resolvedOperands, this.context.arguments);
     return {
-      operands: mergeArgumentsFromConfig(operands, this.context.arguments),
+      operands: resolvedOperands,
       unknown,
     };
   }

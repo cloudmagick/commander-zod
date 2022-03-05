@@ -162,3 +162,20 @@ export function createOptionFlags(
     .join(' ');
   return optionFlags;
 }
+
+export function assignResolvedArgumentValues(
+  src: string[],
+  args: Record<string, ParameterContext>
+) {
+  const sortedArguments = sortArguments(args, (arg) => arg.definition);
+
+  for (const [index, argValue] of src.entries()) {
+    if (sortedArguments[index]) {
+      if (sortedArguments[index].definition.variadic) {
+        sortedArguments[index].value = src.slice(index);
+        break;
+      }
+      sortedArguments[index].value = argValue;
+    }
+  }
+}
