@@ -33,7 +33,9 @@ import {
   validateSingleVariadicArgument,
 } from './validate';
 
-export class Command extends BaseCommand {
+export class Command<
+  TDefinition extends CommandDefinition = CommandDefinition
+> extends BaseCommand {
   private _definition: CommandDefinition;
   context: CommandContext = {
     arguments: {},
@@ -43,7 +45,7 @@ export class Command extends BaseCommand {
   private _shouldUsePromise = false;
   private _eventBus: EventBus;
 
-  constructor(config: CommandDefinition, eventBus?: EventBus) {
+  constructor(config: TDefinition, eventBus?: EventBus) {
     super(config.name);
     if (config.description) {
       this.description(config.description);
@@ -386,46 +388,11 @@ export class Command extends BaseCommand {
   ) {
     this._eventBus.subscribe(name, subscriber);
   }
-
-  static create<T extends CommandDefinition>(config: T) {
-    return new ActionCommand(config);
-  }
 }
 
-export class ActionCommand<
-  TDefinition extends CommandDefinition
-> extends Command {
-  base: Command;
-  constructor(config: TDefinition) {
-    super(config);
-    this.base = this;
-  }
-
-  hook(
-    event: HookEvent,
-    listener: (
-      props: CommandProps<TDefinition>['props'],
-      extras: CommandProps<TDefinition>['extras'],
-      thisCommand: BaseCommand,
-      actionCommand: BaseCommand
-    ) => void | Promise<void>
-  ): this {
-    return super.hook(event, listener);
-  }
-
-  action(
-    fn: (
-      props: CommandProps<TDefinition>['props'],
-      extras: CommandProps<TDefinition>['extras'],
-      command: BaseCommand
-    ) => void | Promise<void>
-  ): this {
-    return super.action(fn);
-  }
-}
-
-export interface ActionCommand<TDefinition extends CommandDefinition>
-  extends Command {
+export interface Command<
+  TDefinition extends CommandDefinition = CommandDefinition
+> {
   hook(
     event: HookEvent,
     listener: (
@@ -435,8 +402,12 @@ export interface ActionCommand<TDefinition extends CommandDefinition>
       actionCommand: BaseCommand
     ) => void | Promise<void>
   ): this;
-  hook(
-    event: HookEvent,
-    listener: (...args: any[]) => void | Promise<void>
+
+  action(
+    fn: (
+      props: CommandProps<TDefinition>['props'],
+      extras: CommandProps<TDefinition>['extras'],
+      command: BaseCommand
+    ) => void | Promise<void>
   ): this;
 }
