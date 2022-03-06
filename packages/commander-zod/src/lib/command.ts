@@ -7,6 +7,8 @@ import {
   ParseOptions,
   ParseOptionsResult,
 } from 'commander';
+import { EventEmitter } from 'stream';
+import { EventBus, ParametersResolved } from './events';
 import {
   assignResolvedArgumentValues,
   createOptionFlags,
@@ -20,6 +22,8 @@ import {
   CommandContext,
   CommandDefinition,
   CommandProps,
+  Event,
+  EventName,
   ExtraProps,
   OptionDefinition,
   ParameterDefinition,
@@ -37,13 +41,15 @@ export class Command extends BaseCommand {
     parameters: {},
   };
   private _shouldUsePromise = false;
+  private _eventBus: EventBus;
 
-  constructor(config: CommandDefinition) {
+  constructor(config: CommandDefinition, eventBus?: EventBus) {
     super(config.name);
     if (config.description) {
       this.description(config.description);
     }
     this._definition = config;
+    this._eventBus = eventBus ?? new EventBus(new EventEmitter());
     this.validateDefinition();
     this._configureCommand();
   }
@@ -363,10 +369,22 @@ export class Command extends BaseCommand {
       this.context.arguments
     );
     assignResolvedArgumentValues(resolvedOperands, this.context.arguments);
+    const parametersResolved: ParametersResolved = {
+      name: 'parameters-resolved',
+      message: this.context,
+    };
+    this._eventBus.publish(parametersResolved);
     return {
       operands: resolvedOperands,
       unknown,
     };
+  }
+
+  subscribe<T extends Event>(
+    name: EventName<T>,
+    subscriber: (event: T) => void
+  ) {
+    this._eventBus.subscribe(name, subscriber);
   }
 
   static create<T extends CommandDefinition>(config: T) {
