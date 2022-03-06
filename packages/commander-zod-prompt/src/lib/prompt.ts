@@ -3,19 +3,17 @@ import { Command, EventBus } from 'commander-zod';
 import { CommandDefinition } from './types';
 
 type CommandConstructor = new (...args: any[]) => Command;
+interface PromptableCommandConstructor {
+  new <TDefinition extends CommandDefinition>(
+    config: TDefinition,
+    eventBus?: EventBus
+  ): Command<TDefinition>;
+}
 
-export type CommandPromptInterface<T extends CommandConstructor> =
-  T extends new (...args: any[]) => infer Class
-    ? Class
-    : never &
-        CommandConstructor & {
-          new (config: CommandDefinition, eventBus?: EventBus): Command;
-        };
-
-export function withPrompt<T extends CommandConstructor>(Command: T) {
-  return class extends Command {
+export function withPrompt<T extends CommandConstructor>(CommandClass: T) {
+  return class extends CommandClass {
     constructor(...args: any[]) {
-      super(args[0], args[1]);
+      super(...args);
     }
-  } as CommandPromptInterface<T>;
+  } as PromptableCommandConstructor;
 }

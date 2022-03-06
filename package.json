@@ -19,6 +19,7 @@
     "@nrwl/node": "^13.8.3",
     "@nrwl/tao": "13.8.3",
     "@nrwl/workspace": "13.8.3",
+    "@types/inquirer": "^8.2.0",
     "@types/jest": "27.0.2",
     "@types/node": "16.11.7",
     "@types/object-hash": "^2.2.1",
@@ -40,6 +41,7 @@
   ],
   "dependencies": {
     "commander": "^9.0.0",
+    "inquirer": "^8.2.0",
     "tslib": "^2.0.0",
     "zod": "^3.11.6"
   }
