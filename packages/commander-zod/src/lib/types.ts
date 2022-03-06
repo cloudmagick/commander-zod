@@ -228,3 +228,12 @@ export type OptionContext = ParameterContext & {
   type: 'option';
   parameter: Option;
 };
+
+export interface Event {
+  readonly name: string;
+  message: unknown;
+}
+
+export type EventName<T extends Event> = T extends { name: infer EventName }
+  ? EventName
+  : never;
