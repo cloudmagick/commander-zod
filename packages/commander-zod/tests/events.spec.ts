@@ -2,7 +2,7 @@ import { Command } from '../src';
 import { ParametersResolved } from '../src/lib/events';
 
 it('should receive parameters resolve event', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'event-test',
     parameters: {
       foo: {

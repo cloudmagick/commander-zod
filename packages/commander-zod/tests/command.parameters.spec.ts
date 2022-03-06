@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 it('should parse required arguments', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     parameters: {
       foo: {
@@ -35,7 +35,7 @@ it('should parse required arguments', () => {
 });
 
 it('should parse arguments from command definition config', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     fromConfig: () => ({
       foo: '1',
@@ -60,7 +60,7 @@ it('should parse arguments from command definition config', () => {
 });
 
 it('should parse parameters from argument definition config', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     parameters: {
       config: {
@@ -108,7 +108,7 @@ it('should parse parameters from argument definition config', () => {
 });
 
 it('should parse parameters from environment', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     useEnvironment: true,
     parameters: {
@@ -152,7 +152,7 @@ it('should parse parameters from environment', () => {
 });
 
 it('should parse parameters from environment', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     useEnvironment: true,
     parameters: {
@@ -196,7 +196,7 @@ it('should parse parameters from environment', () => {
 });
 
 it('should parse parameters from config and environment', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     useEnvironment: true,
     environmentPrefix: 'JEST_',
@@ -243,7 +243,7 @@ it('should parse parameters from config and environment', () => {
 });
 
 it('should set appropriate properties for option creation flags', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     parameters: {
       foo: {
@@ -303,7 +303,7 @@ it('should set appropriate properties for option creation flags', () => {
 });
 
 it('should parse options from option definition config', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     parameters: {
       config: {
@@ -336,7 +336,7 @@ it('should parse options from option definition config', () => {
 });
 
 it('should parse options from option definition config', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     parameters: {
       config: {
@@ -369,7 +369,7 @@ it('should parse options from option definition config', () => {
 });
 
 it('should allow custom configuration of parameters via commander', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'command',
     parameters: {
       foo: {
@@ -402,7 +402,7 @@ it('should allow additional parameters configured via Commander', async () => {
     .string()
     .transform(async (v) => await Promise.resolve(parseInt(v)));
   const actual = {} as CommandProps;
-  const command = Command.create({
+  const command = new Command({
     name: 'command',
     fromConfig: () => ({
       foo: '1',
@@ -454,7 +454,7 @@ it('should allow additional parameters configured via Commander', async () => {
 });
 
 it('should include in context all resolved argument and option values before running command', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     parameters: {
       foo: {
@@ -502,7 +502,7 @@ it('should include in context all resolved argument and option values before run
 });
 
 it('should override source values with cli parameters', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     useEnvironment: true,
     parameters: {

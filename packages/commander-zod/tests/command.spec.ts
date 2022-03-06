@@ -5,7 +5,7 @@ import { CommandProps } from '../src';
 import { Command } from '../src/lib/command';
 
 it('should call action handler with no parameters', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
   }).action((props) => {
     expect(props).toEqual({});
@@ -18,7 +18,7 @@ it('should call action handler with no parameters', () => {
 });
 
 it('should generate help with required arguments', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     description: 'arg parse test desc',
     parameters: {
@@ -72,7 +72,7 @@ it('should generate help with required arguments', () => {
 });
 
 it('should generate help with required arguments and options', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     description: 'arg parse test desc',
     parameters: {
@@ -156,7 +156,7 @@ it('should generate help with required arguments and options', () => {
 });
 
 it('should generate help with required, optional, variadic, negated, default, and environment options', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     description: 'arg parse test desc',
     parameters: {
@@ -245,7 +245,7 @@ it('should generate help with required, optional, variadic, negated, default, an
 });
 
 it('should call action handler with parsed arguments', () => {
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     parameters: {
       foo: {
@@ -272,7 +272,7 @@ it('should call action handler with parsed options and arguments', () => {
     .string()
     .transform((v) => parseInt(v))
     .optional();
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     parameters: {
       foo: {
@@ -315,7 +315,7 @@ it('should call action handler with extra options', () => {
     .string()
     .transform((v) => parseInt(v))
     .optional();
-  const command = Command.create({
+  const command = new Command({
     name: 'args-parse-test',
     parameters: {
       foo: {
@@ -376,7 +376,7 @@ it('should call action handler with extra options', () => {
 it('should pass options from preAction hook to nested commmands', () => {
   const numberSchema = z.string().transform((v) => parseInt(v));
   const actual = {} as CommandProps;
-  const parent = Command.create({
+  const parent = new Command({
     name: 'parent',
     parameters: {
       foo: {
@@ -400,7 +400,7 @@ it('should pass options from preAction hook to nested commmands', () => {
       target.setOptionValue('bar', props.bar);
     });
 
-  Command.create({
+  new Command({
     name: 'nested',
     parentCommand: parent,
     parameters: {
@@ -455,10 +455,10 @@ it('should call async nested actions', async () => {
   const numberSchema = z
     .string()
     .transform(async (v) => await Promise.resolve(parseInt(v)));
-  const parent = Command.create({ name: 'parent' })
+  const parent = new Command({ name: 'parent' })
     .passThroughOptions()
     .enablePositionalOptions();
-  Command.create({
+  new Command({
     name: 'nested1',
     parentCommand: parent,
     fromConfig: () => ({
@@ -490,7 +490,7 @@ it('should call async nested actions', async () => {
     return Promise.resolve();
   });
 
-  Command.create({
+  new Command({
     name: 'nested2',
     parentCommand: parent,
     parameters: {
