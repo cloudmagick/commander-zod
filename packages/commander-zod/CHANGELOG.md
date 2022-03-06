@@ -2,6 +2,15 @@
 
 This file was generated using [@jscutlery/semver](https://github.com/jscutlery/semver).
 
+# [0.3.0](https://github.com/cloudmagick/commander-zod/compare/commander-zod-0.2.0...commander-zod-0.3.0) (2022-03-06)
+
+
+### Features
+
+* simplify command usage and interface ([#14](https://github.com/cloudmagick/commander-zod/issues/14)) ([301c0be](https://github.com/cloudmagick/commander-zod/commit/301c0be605a012ff909c3be8a9b8dbb75eb39819))
+
+
+
 # [0.2.0](https://github.com/cloudmagick/commander-zod/compare/commander-zod-0.1.0...commander-zod-0.2.0) (2022-03-06)
 
 
