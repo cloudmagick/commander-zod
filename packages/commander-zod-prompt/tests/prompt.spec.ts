@@ -195,3 +195,11 @@ it('should call default prompts for unresolved parameters with priority given to
   await command.parseAsync(['node', 'test', 'foo cli', 'bar cli']);
   expect.assertions(1);
 });
+
+it('should have `_prepareUserArgs` as a private method on the Command', () => {
+  const command = new Command({ name: 'test' });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const prepArgs = (command as any)._prepareUserArgs;
+  expect(prepArgs).not.toBeNull();
+  expect(typeof prepArgs).toEqual('function');
+});
