@@ -2,17 +2,15 @@ import {
   CommandDefinition as BaseCommandDefinition,
   ParameterDefinition as BaseParameterDefinition,
 } from 'commander-zod';
-import { prompt } from 'inquirer';
-
-prompt([]).then();
 
 export interface CommandDefinition extends BaseCommandDefinition {
   /** Enables interactive prompts for all command-line parameters
    *
-   * When true, this will add a prompt for all required arguments and options,
+   * When true, this will add a default prompt for all required arguments and options,
    * if one is not already provided.
    */
-  useInteractivePrompt: boolean;
+  useDefaultInteractivePrompt: boolean;
+  parameters: Record<string, ParameterDefinition>;
 }
 
 export type ParameterDefinition = BaseParameterDefinition & {
@@ -25,4 +23,9 @@ export type ParameterDefinition = BaseParameterDefinition & {
    * [see Inquirer docs]{@link (https://www.npmjs.com/package/inquirer)}
    */
   prompt?: string | ((value?: unknown) => Promise<unknown>);
+
+  /** When true, this will always execute the prompt regardless of whether a value
+   * has already been provided.
+   */
+  alwaysPrompt?: boolean;
 };

@@ -1,1 +1,1 @@
-export * from './lib/commander-zod-prompt';
+export * from './lib/prompt';

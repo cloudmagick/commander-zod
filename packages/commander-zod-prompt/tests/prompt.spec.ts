@@ -1,12 +1,13 @@
 import { Command } from 'commander-zod';
+import { createInquirerMock } from 'testkit';
 import { z } from 'zod';
 import { withPrompt } from '../src/lib/prompt';
 
-it('should add Prompt mixin to Command', () => {
+it('should add Prompt mixin to Command', async () => {
   const PromptableCommand = withPrompt(Command);
   const command = new PromptableCommand({
     name: 'test',
-    useInteractivePrompt: false,
+    useDefaultInteractivePrompt: false,
     parameters: {
       foo: {
         type: 'argument',
@@ -39,6 +40,158 @@ it('should add Prompt mixin to Command', () => {
     });
   });
 
-  command.parse(['node', 'test', 'foo', 'bar', '--fizz', '1', '--buzz', '2']);
+  await command.parseAsync([
+    'node',
+    'test',
+    'foo',
+    'bar',
+    '--fizz',
+    '1',
+    '--buzz',
+    '2',
+  ]);
+  expect.assertions(1);
+});
+
+it('should call prompts for all unresolved parameters', async () => {
+  const PromptableCommand = withPrompt(Command);
+  const command = new PromptableCommand({
+    name: 'test',
+    useDefaultInteractivePrompt: false,
+    parameters: {
+      foo: {
+        type: 'argument',
+        schema: z.string(),
+        prompt: () => Promise.resolve('foo'),
+      },
+      bar: {
+        type: 'argument',
+        schema: z.string(),
+        prompt: () => Promise.resolve('bar'),
+      },
+      fizz: {
+        type: 'option',
+        schema: z.string().transform((v) => parseInt(v)),
+        prompt: () => Promise.resolve('1'),
+      },
+      buzz: {
+        type: 'option',
+        schema: z.string().transform((v) => parseInt(v)),
+        prompt: () => Promise.resolve('2'),
+      },
+    },
+  }).action((props) => {
+    expect({
+      foo: props.foo,
+      bar: props.bar,
+      fizz: props.fizz,
+      buzz: props.buzz,
+    }).toEqual({
+      foo: 'foo',
+      bar: 'bar',
+      fizz: 1,
+      buzz: 2,
+    });
+  });
+
+  await command.parseAsync(['node', 'test']);
+  expect.assertions(1);
+});
+
+it('should call default prompts for unresolved parameters with priority given to config', async () => {
+  const inquirerMock = createInquirerMock([
+    { foo: 'foo' },
+    { bar: 'bar' },
+    { fizz: '1' },
+    { buzz: '2' },
+  ]);
+  const PromptableCommand = withPrompt(Command, inquirerMock);
+  const command = new PromptableCommand({
+    name: 'test',
+    useDefaultInteractivePrompt: true,
+    fromConfig: () => ({
+      fizz: '3', // <--- these should take precedence over the prompts
+      buzz: '4',
+    }),
+    parameters: {
+      foo: {
+        type: 'argument',
+        schema: z.string(),
+      },
+      bar: {
+        type: 'argument',
+        schema: z.string(),
+      },
+      fizz: {
+        type: 'option',
+        schema: z.string().transform((v) => parseInt(v)),
+      },
+      buzz: {
+        type: 'option',
+        schema: z.string().transform((v) => parseInt(v)),
+      },
+    },
+  }).action((props) => {
+    expect({
+      foo: props.foo,
+      bar: props.bar,
+      fizz: props.fizz,
+      buzz: props.buzz,
+    }).toEqual({
+      foo: 'foo',
+      bar: 'bar',
+      fizz: 3,
+      buzz: 4,
+    });
+  });
+
+  await command.parseAsync(['node', 'test']);
+  expect.assertions(1);
+});
+
+it('should call default prompts for unresolved parameters with priority given to cli', async () => {
+  const inquirerMock = createInquirerMock([
+    { foo: 'foo' },
+    { bar: 'bar' },
+    { fizz: '1' },
+    { buzz: '2' },
+  ]);
+  const PromptableCommand = withPrompt(Command, inquirerMock);
+  const command = new PromptableCommand({
+    name: 'test',
+    useDefaultInteractivePrompt: true,
+    parameters: {
+      foo: {
+        type: 'argument',
+        schema: z.string(),
+      },
+      bar: {
+        type: 'argument',
+        schema: z.string(),
+      },
+      fizz: {
+        type: 'option',
+        schema: z.string().transform((v) => parseInt(v)),
+      },
+      buzz: {
+        type: 'option',
+        schema: z.string().transform((v) => parseInt(v)),
+      },
+    },
+  }).action((props) => {
+    expect({
+      foo: props.foo,
+      bar: props.bar,
+      fizz: props.fizz,
+      buzz: props.buzz,
+    }).toEqual({
+      foo: 'foo cli',
+      bar: 'bar cli',
+      fizz: 1,
+      buzz: 2,
+    });
+  });
+
+  await command.parseAsync(['node', 'test', 'foo cli', 'bar cli']);
   expect.assertions(1);
 });
