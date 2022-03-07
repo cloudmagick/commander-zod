@@ -1,3 +1,4 @@
+import { CommanderError } from 'commander';
 import { Command } from 'commander-zod';
 import { createInquirerMock } from 'testkit';
 import { z } from 'zod';
@@ -202,4 +203,38 @@ it('should have `_prepareUserArgs` as a private method on the Command', () => {
   const prepArgs = (command as any)._prepareUserArgs;
   expect(prepArgs).not.toBeNull();
   expect(typeof prepArgs).toEqual('function');
+});
+
+it('should disable prompts when --no-interactive flag is set', async () => {
+  const PromptableCommand = withPrompt(Command);
+  const command = new PromptableCommand({
+    name: 'test',
+    addDisableInteractivePromptFlag: true,
+    parameters: {
+      foo: {
+        type: 'argument',
+        schema: z.string(),
+        prompt: () => Promise.resolve('foo'),
+      },
+      bar: {
+        type: 'argument',
+        schema: z.string(),
+        prompt: () => Promise.resolve('bar'),
+      },
+    },
+  })
+    .action(() => {
+      throw new Error('Action should not be called');
+    })
+    .exitOverride((err) => {
+      throw err;
+    });
+
+  try {
+    async () => await command.parseAsync(['node', 'test', '--no-interactive']);
+  } catch (err) {
+    expect((err as CommanderError).message).toMatch(
+      /error: missing required argument 'foo'/
+    );
+  }
 });

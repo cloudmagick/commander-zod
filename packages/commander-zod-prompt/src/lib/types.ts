@@ -9,7 +9,8 @@ export interface CommandDefinition extends BaseCommandDefinition {
    * When true, this will add a default prompt for all required arguments and options,
    * if one is not already provided.
    */
-  useDefaultInteractivePrompt: boolean;
+  useDefaultInteractivePrompt?: boolean;
+  addDisableInteractivePromptFlag?: boolean;
   parameters: Record<string, ParameterDefinition>;
 }
 

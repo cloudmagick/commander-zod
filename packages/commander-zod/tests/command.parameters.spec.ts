@@ -296,7 +296,7 @@ it('should set appropriate properties for option creation flags', () => {
     },
     fizz: {
       require: false,
-      optional: true,
+      optional: false,
       negate: true,
     },
   });

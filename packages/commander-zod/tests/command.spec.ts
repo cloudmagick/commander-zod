@@ -237,7 +237,7 @@ it('should generate help with required, optional, variadic, negated, default, an
         description: 'fizz desc',
       },
       buzz: {
-        term: '--no-buzz [buzz]',
+        term: '--no-buzz',
         description: 'buzz desc (env: BUZZ)',
       },
     },

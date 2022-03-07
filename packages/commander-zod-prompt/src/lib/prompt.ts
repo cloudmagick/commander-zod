@@ -1,11 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ParseOptions, ParseOptionsResult } from 'commander';
-import {
-  Command,
-  EventBus,
-  mergeArgumentsFromConfig,
-  ParametersResolved,
-} from 'commander-zod';
+import { Command, EventBus, mergeArgumentsFromConfig } from 'commander-zod';
 import * as defaultInquirer from 'inquirer';
 import { getPrompt } from './helpers';
 import { CommandDefinition, ParameterDefinition } from './types';
@@ -29,27 +24,38 @@ export function withPrompt<T extends CommandConstructor>(
     constructor(...args: any[]) {
       super(...args);
       this._configurePrompts();
-      this.subscribe<ParametersResolved>(
-        'parameters-resolved',
-        handleUnresolvedParameters
-      );
     }
 
     private _configurePrompts() {
-      const definition = this._definition as CommandDefinition;
+      const definition = this.definition as CommandDefinition;
       const parameters = definition.parameters;
+
+      if (definition.addDisableInteractivePromptFlag) {
+        this.configureOption('interactive', {
+          type: 'option',
+          negate: true,
+          description: 'Disable use of interactive prompt',
+        });
+      }
 
       for (const [name, parameter] of Object.entries(parameters)) {
         parameter.prompt = getPrompt(
           name,
           parameter,
-          definition.useDefaultInteractivePrompt,
+          definition.useDefaultInteractivePrompt ?? false,
           this._inquirer
         );
       }
     }
 
     private async _executePromptsForUnresolvedArguments() {
+      const definition = this.definition as CommandDefinition;
+      if (
+        definition.addDisableInteractivePromptFlag &&
+        this.context.options.interactive.value == false
+      ) {
+        return;
+      }
       for (const parameter of Object.values(this.context.parameters)) {
         const definition = parameter.definition as ParameterDefinition;
         if (definition.prompt) {
@@ -118,18 +124,4 @@ export function withPrompt<T extends CommandConstructor>(
       this.error('Synchronous parse method is not allowed when using prompts');
     }
   } as PromptableCommandConstructor;
-}
-
-async function handleUnresolvedParameters(event: ParametersResolved) {
-  const context = event.message;
-  for (const parameter of Object.values(context.parameters)) {
-    const definition = parameter.definition as ParameterDefinition;
-    if (definition.prompt) {
-      const prompt = definition.prompt as (value?: unknown) => Promise<unknown>;
-      parameter.value =
-        !parameter.value || (parameter.value && definition.alwaysPrompt)
-          ? await prompt(parameter.value)
-          : parameter.value;
-    }
-  }
 }

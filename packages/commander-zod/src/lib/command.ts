@@ -36,7 +36,7 @@ import {
 export class Command<
   TDefinition extends CommandDefinition = CommandDefinition
 > extends BaseCommand {
-  protected _definition: CommandDefinition;
+  protected definition: CommandDefinition;
   context: CommandContext = {
     arguments: {},
     options: {},
@@ -50,7 +50,7 @@ export class Command<
     if (config.description) {
       this.description(config.description);
     }
-    this._definition = config;
+    this.definition = config;
     this._eventBus =
       eventBus ?? new EventBus(new EventEmitter({ captureRejections: true }));
     this.validateDefinition();
@@ -58,7 +58,7 @@ export class Command<
   }
 
   validateDefinition() {
-    const parameters = this._definition.parameters ?? {};
+    const parameters = this.definition.parameters ?? {};
     for (const [name] of Object.entries(parameters)) {
       validateParameterName(name);
     }
@@ -66,30 +66,30 @@ export class Command<
   }
 
   private _configureCommand() {
-    if (this._definition.parentCommand) {
-      if (this._definition.parentCommand) {
-        this._definition.parentCommand.addCommand(this);
+    if (this.definition.parentCommand) {
+      if (this.definition.parentCommand) {
+        this.definition.parentCommand.addCommand(this);
       }
     }
-    const parameters = this._definition.parameters ?? {};
+    const parameters = this.definition.parameters ?? {};
 
     for (const [name, parameter] of Object.entries(parameters)) {
       if (parameter.type == 'argument') {
-        this._configureArgument(name, parameter);
+        this.configureArgument(name, parameter);
       } else if (parameter.type == 'option') {
-        this._configureOption(name, parameter);
+        this.configureOption(name, parameter);
       }
     }
   }
 
-  private _configureArgument(name: string, definition: ParameterDefinition) {
+  protected configureArgument(name: string, definition: ParameterDefinition) {
     const argument = new Argument(name, definition.description);
     argument.required = definition.required ?? true;
     argument.variadic = definition.variadic ?? false;
     definition.names = getParameterNames(
       name,
       definition,
-      this._definition.environmentPrefix
+      this.definition.environmentPrefix
     );
     if (definition.defaultValue) {
       argument.default(definition.defaultValue);
@@ -108,16 +108,16 @@ export class Command<
     };
   }
 
-  private _configureOption(name: string, definition: ParameterDefinition) {
+  protected configureOption(name: string, definition: ParameterDefinition) {
     const optionDefinition = definition as OptionDefinition;
     const optionFlags = createOptionFlags(name, definition);
     const option = new Option(optionFlags, definition.description);
     definition.names = getParameterNames(
       name,
       definition,
-      this._definition.environmentPrefix
+      this.definition.environmentPrefix
     );
-    if (this._definition.useEnvironment || definition.environment) {
+    if (this.definition.useEnvironment || definition.environment) {
       option.env(definition.names?.env ?? '');
     }
     if (definition.defaultValue) {
@@ -135,23 +135,17 @@ export class Command<
       definition: optionDefinition,
       value: null,
     };
-  }
-
-  private _addSourceHandlers() {
-    for (const entry of Object.entries(this.context.parameters)) {
-      const context = entry[1];
-      if (context.type == 'option') {
-        this.on(`option:${context.name}`, (value: string) => {
-          if (context.definition.fromConfig) {
-            const results = context.definition.fromConfig(value);
-            context.value = results;
-            this._resolveParametersFromSource(results);
-          } else {
-            context.value = value;
-          }
-        });
+    const context = this.context.parameters[name];
+    this.on(`option:${option.name()}`, (value: string | undefined) => {
+      if (context.definition.fromConfig) {
+        const results = context.definition.fromConfig(value);
+        context.value = results;
+        this._resolveParametersFromSource(results);
+      } else {
+        // if value is undefined then it probably was a boolean flag
+        context.value = value ?? (option.negate ? false : true);
       }
-    }
+    });
   }
 
   private _handleFromConfigArguments(args: string[]) {
@@ -169,7 +163,7 @@ export class Command<
 
       if (
         !arg.value &&
-        (this._definition.useEnvironment || arg.definition.environment)
+        (this.definition.useEnvironment || arg.definition.environment)
       ) {
         arg.value = process.env[arg.definition.names?.env ?? ''];
       }
@@ -231,7 +225,7 @@ export class Command<
   }
 
   protected parseProps() {
-    const schema = createValidationSchema(this._definition)?.passthrough();
+    const schema = createValidationSchema(this.definition)?.passthrough();
     const props = this._mapValuesToProps();
     if (schema) {
       return {
@@ -247,7 +241,7 @@ export class Command<
   }
 
   protected async parsePropsAsync() {
-    const schema = createValidationSchema(this._definition)?.passthrough();
+    const schema = createValidationSchema(this.definition)?.passthrough();
     const props = this._mapValuesToProps();
     if (schema) {
       return {
@@ -357,11 +351,10 @@ export class Command<
   }
 
   override parseOptions(argv: string[]): ParseOptionsResult {
-    if (this._definition.fromConfig) {
-      const results = this._definition.fromConfig();
+    if (this.definition.fromConfig) {
+      const results = this.definition.fromConfig();
       this._resolveParametersFromSource(results);
     }
-    this._addSourceHandlers();
     const { operands, unknown } = super.parseOptions(argv);
     this._handleFromConfigArguments(operands);
 

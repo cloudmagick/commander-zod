@@ -156,7 +156,7 @@ export function createOptionFlags(
   const optionFlags = [
     names.alias ? `-${names.alias}` : null,
     optionDefinition.negate ? `--no-${names.param}` : `--${names.param}`,
-    optionTermConstraint,
+    optionDefinition.negate ? null : optionTermConstraint,
   ]
     .filter((opt) => !!opt)
     .join(' ');
