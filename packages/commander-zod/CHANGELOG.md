@@ -2,6 +2,15 @@
 
 This file was generated using [@jscutlery/semver](https://github.com/jscutlery/semver).
 
+## [0.3.1](https://github.com/cloudmagick/commander-zod/compare/commander-zod-0.3.0...commander-zod-0.3.1) (2022-03-07)
+
+
+### Bug Fixes
+
+* this librarys Command into all action or hook callbacks ([#15](https://github.com/cloudmagick/commander-zod/issues/15)) ([4595247](https://github.com/cloudmagick/commander-zod/commit/45952473461c986b87263adcf73b7a732d1c1e7c))
+
+
+
 # [0.3.0](https://github.com/cloudmagick/commander-zod/compare/commander-zod-0.2.0...commander-zod-0.3.0) (2022-03-06)
 
 
