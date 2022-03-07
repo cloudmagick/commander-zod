@@ -58,7 +58,9 @@ export type CommandDefinition = {
   };
 };
 
-export type ParameterDefinition = {
+export type ParameterDefinition = ArgumentDefinition | OptionDefinition;
+
+interface BaseDefinition {
   /** Zod Schema to use for validation and type inference */
   schema?: z.ZodFirstPartySchemaTypes;
 
@@ -86,29 +88,6 @@ export type ParameterDefinition = {
    */
   environment?: boolean | string;
 
-  /** Argument and option values can be resolved from a configuration file that will be
-   * passed in as the first parameter.
-   *
-   * This will decorate the parameter's `parseArg` function and will receive the value
-   * parsed from the command-line or environment. The results will be added as a resolved
-   * value _if_ one doesn't already exist for arguments, and will be set as a 'config'
-   * value for options (this means it will have the lowest priority of cli and env)
-   *
-   * **Note**: Extraneous values are added as options and will be passed along to the action handler.
-   */
-  fromConfig?: (value?: string) => Record<string, unknown>;
-
-  /** Is the parameter required
-   *
-   * by default it is true for arguments, and false for options
-   */
-  required?: boolean;
-} & (ArgumentDefinition | OptionDefinition);
-
-export type ArgumentDefinition = {
-  /** Configures command with an `Argument` */
-  type: 'argument';
-
   /** Parameter names for different sources.
    *
    * When this program attempts to parse parameters it will use the
@@ -135,13 +114,38 @@ export type ArgumentDefinition = {
    *
    * **NOTE**: The first truthy value is taken in priority of command line, config file, and/or environment.
    */
+  names?: ParameterNameDefinitions;
+
+  /** Argument and option values can be resolved from a configuration file that will be
+   * passed in as the first parameter.
+   *
+   * This will decorate the parameter's `parseArg` function and will receive the value
+   * parsed from the command-line or environment. The results will be added as a resolved
+   * value _if_ one doesn't already exist for arguments, and will be set as a 'config'
+   * value for options (this means it will have the lowest priority of cli and env)
+   *
+   * **Note**: Extraneous values are added as options and will be passed along to the action handler.
+   */
+  fromConfig?: (value?: string) => Record<string, unknown>;
+
+  /** Is the parameter required
+   *
+   * by default it is true for arguments, and false for options
+   */
+  required?: boolean;
+}
+
+export interface ArgumentDefinition extends BaseDefinition {
+  /** Configures command with an `Argument` */
+  type: 'argument';
+
   names?: Omit<ParameterNameDefinitions, 'alias' | 'param'>;
 
   /** A function that can be used to add/update `Argument` configuration */
   configure?: (argument: Argument) => void;
-};
+}
 
-export type OptionDefinition = {
+export interface OptionDefinition extends BaseDefinition {
   /** Configures command as an `Option` */
   type: 'option';
 
@@ -152,7 +156,7 @@ export type OptionDefinition = {
 
   /** A function that can be used to add/update `Option` configuration */
   configure?: (option: Option) => void;
-};
+}
 
 export type ParameterNameDefinitions = {
   /** A long-name for optional cli parameters */
