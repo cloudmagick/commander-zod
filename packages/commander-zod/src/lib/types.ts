@@ -41,6 +41,9 @@ export type CommandDefinition = {
    */
   environmentPrefix?: string;
 
+  /** When true, help descriptions will also include the config key for all parameters */
+  includeConfigNameInParameterDescriptions?: boolean;
+
   /** Parameter definitions
    *
    * - The `key` given for the parameter will be used as the variable
@@ -76,13 +79,19 @@ export interface BaseDefinition {
   /** List of valid choices for the parameter */
   choices?: string[];
 
-  /** Invidual parameter environment flag
+  /** Individual parameter environment flag
    *
-   * This can be a boolean to use the default environment name translation
+   * - When false, this disables the environment variable for this parameter
+   * (true by default)
+   *
+   * - This can be a boolean to use the default environment name translation
    * or a string to use as the environment name. The latter is a convenience
    * over having to also override the parameter in the `names` property
    */
   environment?: boolean | string;
+
+  /** When false, it will disable populating this value from a config (true by default) */
+  useConfig?: boolean;
 
   /** Parameter names for different sources.
    *

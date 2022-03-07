@@ -9,6 +9,7 @@ import {
 } from 'commander';
 import { EventEmitter } from 'stream';
 import { EventBus, ParametersResolved } from './events';
+import { Help } from './help';
 import {
   assignResolvedArgumentValues,
   createOptionFlags,
@@ -36,7 +37,7 @@ import {
 export class Command<
   TDefinition extends CommandDefinition = CommandDefinition
 > extends BaseCommand {
-  protected definition: CommandDefinition;
+  definition: CommandDefinition;
   context: CommandContext = {
     arguments: {},
     options: {},
@@ -172,14 +173,14 @@ export class Command<
 
   private _resolveParametersFromSource(
     config: Record<string, unknown>,
-    source: 'config' | 'env' = 'config'
+    source: 'config' = 'config'
   ) {
     for (const [name, value] of Object.entries(config)) {
       // find parameters matching the config name override or name
       const context = Object.values(this.context.parameters).find(
         (param) => name == param.definition.names?.config ?? param.name
       );
-      if (context) {
+      if (context && context.definition.useConfig != false) {
         context.value = value;
         if (context.type == 'option') {
           this.setOptionValueWithSource(name, value, source);
@@ -254,6 +255,12 @@ export class Command<
     return {
       ...props,
     };
+  }
+
+  override createHelp(): Help {
+    const help = new Help(this.definition);
+    const configuration = this.configureHelp();
+    return Object.assign(help, configuration);
   }
 
   override addOption(option: Option): this {
