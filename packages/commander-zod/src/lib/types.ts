@@ -43,24 +43,20 @@ export type CommandDefinition = {
 
   /** Parameter definitions
    *
-   * Supports both arguments and optional parameters. Despite the name
-   * "optional", both parameter types can be made mandatory. The main
-   * difference is that arguments are positional while options include
-   * a key (i.e. `--key value`)
+   * - The `key` given for the parameter will be used as the variable
+   * name for the resolved value. All resolved parameters will then
+   * be passed as a `props` object into an `action` and/or `hook` callback.
+   * The types will be statically resolved and inferred based on the
+   * zod schema defined. If no zod schema is defined a string is assumed.
    */
   parameters?: {
-    /** The name of the parameter
-     *
-     * If a value is found for this parameter it will be passed
-     * to the action handler
-     */
     [key: string]: ParameterDefinition;
   };
 };
 
 export type ParameterDefinition = ArgumentDefinition | OptionDefinition;
 
-interface BaseDefinition {
+export interface BaseDefinition {
   /** Zod Schema to use for validation and type inference */
   schema?: z.ZodFirstPartySchemaTypes;
 

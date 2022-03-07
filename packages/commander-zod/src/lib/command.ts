@@ -36,7 +36,7 @@ import {
 export class Command<
   TDefinition extends CommandDefinition = CommandDefinition
 > extends BaseCommand {
-  private _definition: CommandDefinition;
+  protected _definition: CommandDefinition;
   context: CommandContext = {
     arguments: {},
     options: {},
@@ -51,7 +51,8 @@ export class Command<
       this.description(config.description);
     }
     this._definition = config;
-    this._eventBus = eventBus ?? new EventBus(new EventEmitter());
+    this._eventBus =
+      eventBus ?? new EventBus(new EventEmitter({ captureRejections: true }));
     this.validateDefinition();
     this._configureCommand();
   }
@@ -365,19 +366,26 @@ export class Command<
     this._handleFromConfigArguments(operands);
 
     // injecting parameters into arguments is not supported by commander
-    // so must be handled explicitly here with `mergeArgumentsFromConfig`
+    // so is handled here with `mergeArgumentsFromConfig`
     const resolvedOperands = mergeArgumentsFromConfig(
       operands,
       this.context.arguments
     );
     assignResolvedArgumentValues(resolvedOperands, this.context.arguments);
+
     const parametersResolved: ParametersResolved = {
       name: 'parameters-resolved',
       message: this.context,
     };
     this._eventBus.publish(parametersResolved);
+
+    // run one more time, just in case subscribers updated parameters
+    const finalResolvedOperands = mergeArgumentsFromConfig(
+      resolvedOperands,
+      this.context.arguments
+    );
     return {
-      operands: resolvedOperands,
+      operands: finalResolvedOperands,
       unknown,
     };
   }
