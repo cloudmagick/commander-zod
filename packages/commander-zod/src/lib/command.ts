@@ -95,6 +95,9 @@ export class Command<
     if (definition.defaultValue) {
       argument.default(definition.defaultValue);
     }
+    if (definition.choices) {
+      argument.choices(definition.choices);
+    }
     const argumentDefinition = definition as ArgumentDefinition;
     if (argumentDefinition.configure) {
       argumentDefinition.configure(argument);
@@ -123,6 +126,9 @@ export class Command<
     }
     if (definition.defaultValue) {
       option.default(definition.defaultValue);
+    }
+    if (definition.choices) {
+      option.choices(definition.choices);
     }
     definition.names = getParameterNames(name, definition);
     if (optionDefinition.configure) {
