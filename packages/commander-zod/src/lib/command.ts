@@ -398,8 +398,8 @@ export interface Command<
     listener: (
       props: CommandProps<TDefinition>['props'],
       extras: CommandProps<TDefinition>['extras'],
-      thisCommand: BaseCommand,
-      actionCommand: BaseCommand
+      thisCommand: Command,
+      actionCommand: Command
     ) => void | Promise<void>
   ): this;
 
@@ -407,7 +407,7 @@ export interface Command<
     fn: (
       props: CommandProps<TDefinition>['props'],
       extras: CommandProps<TDefinition>['extras'],
-      command: BaseCommand
+      command: Command
     ) => void | Promise<void>
   ): this;
 }
