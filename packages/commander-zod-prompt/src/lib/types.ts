@@ -10,6 +10,12 @@ export interface CommandDefinition extends BaseCommandDefinition {
    * if one is not already provided.
    */
   useDefaultInteractivePrompt?: boolean;
+
+  /** When true, an additional option will be added that can be used to disable
+   * the interactive prompt.
+   *
+   * The flag `--no-interactive` will be added as an option when enabled.
+   */
   addDisableInteractivePromptFlag?: boolean;
   parameters: Record<string, ParameterDefinition>;
 }
