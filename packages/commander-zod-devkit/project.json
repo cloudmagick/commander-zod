@@ -1,0 +1,50 @@
+{
+  "root": "packages/commander-zod-devkit",
+  "sourceRoot": "packages/commander-zod-devkit/src",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/commander-zod-devkit",
+        "main": "packages/commander-zod-devkit/src/index.ts",
+        "tsConfig": "packages/commander-zod-devkit/tsconfig.lib.json",
+        "assets": [
+          "packages/commander-zod-devkit/*.md",
+          {
+            "input": "./packages/commander-zod-devkit/src",
+            "glob": "**/!(*.ts)",
+            "output": "./src"
+          },
+          {
+            "input": "./packages/commander-zod-devkit/src",
+            "glob": "**/*.d.ts",
+            "output": "./src"
+          },
+          {
+            "input": "./packages/commander-zod-devkit",
+            "glob": "generators.json",
+            "output": "."
+          }
+        ]
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["packages/commander-zod-devkit/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/packages/commander-zod-devkit"],
+      "options": {
+        "jestConfig": "packages/commander-zod-devkit/jest.config.js",
+        "passWithNoTests": true,
+        "codeCoverage": true
+      }
+    }
+  },
+  "tags": []
+}

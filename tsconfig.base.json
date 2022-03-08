@@ -17,6 +17,9 @@
     "baseUrl": ".",
     "strict": true,
     "paths": {
+      "@commander-zod/commander-zod-devkit": [
+        "packages/commander-zod-devkit/src/index.ts"
+      ],
       "commander-zod": ["packages/commander-zod/src/index.ts"],
       "commander-zod-prompt": ["packages/commander-zod-prompt/src/index.ts"],
       "testkit": ["shared/testkit/index.ts"]

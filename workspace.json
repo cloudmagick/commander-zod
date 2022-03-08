@@ -2,6 +2,8 @@
   "version": 2,
   "projects": {
     "commander-zod": "packages/commander-zod",
+    "commander-zod-devkit": "packages/commander-zod-devkit",
+    "commander-zod-devkit-e2e": "e2e/commander-zod-devkit-e2e",
     "commander-zod-prompt": "packages/commander-zod-prompt"
   }
 }
