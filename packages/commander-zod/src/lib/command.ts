@@ -9,6 +9,7 @@ import {
 } from 'commander';
 import { EventEmitter } from 'stream';
 import { EventBus, ParametersResolved } from './events';
+import { Help } from './help';
 import {
   assignResolvedArgumentValues,
   createOptionFlags,
@@ -36,7 +37,7 @@ import {
 export class Command<
   TDefinition extends CommandDefinition = CommandDefinition
 > extends BaseCommand {
-  private _definition: CommandDefinition;
+  definition: CommandDefinition;
   context: CommandContext = {
     arguments: {},
     options: {},
@@ -50,14 +51,15 @@ export class Command<
     if (config.description) {
       this.description(config.description);
     }
-    this._definition = config;
-    this._eventBus = eventBus ?? new EventBus(new EventEmitter());
+    this.definition = config;
+    this._eventBus =
+      eventBus ?? new EventBus(new EventEmitter({ captureRejections: true }));
     this.validateDefinition();
     this._configureCommand();
   }
 
   validateDefinition() {
-    const parameters = this._definition.parameters ?? {};
+    const parameters = this.definition.parameters ?? {};
     for (const [name] of Object.entries(parameters)) {
       validateParameterName(name);
     }
@@ -65,33 +67,36 @@ export class Command<
   }
 
   private _configureCommand() {
-    if (this._definition.parentCommand) {
-      if (this._definition.parentCommand) {
-        this._definition.parentCommand.addCommand(this);
+    if (this.definition.parentCommand) {
+      if (this.definition.parentCommand) {
+        this.definition.parentCommand.addCommand(this);
       }
     }
-    const parameters = this._definition.parameters ?? {};
+    const parameters = this.definition.parameters ?? {};
 
     for (const [name, parameter] of Object.entries(parameters)) {
       if (parameter.type == 'argument') {
-        this._configureArgument(name, parameter);
+        this.configureArgument(name, parameter);
       } else if (parameter.type == 'option') {
-        this._configureOption(name, parameter);
+        this.configureOption(name, parameter);
       }
     }
   }
 
-  private _configureArgument(name: string, definition: ParameterDefinition) {
+  protected configureArgument(name: string, definition: ParameterDefinition) {
     const argument = new Argument(name, definition.description);
     argument.required = definition.required ?? true;
     argument.variadic = definition.variadic ?? false;
     definition.names = getParameterNames(
       name,
       definition,
-      this._definition.environmentPrefix
+      this.definition.environmentPrefix
     );
     if (definition.defaultValue) {
       argument.default(definition.defaultValue);
+    }
+    if (definition.choices) {
+      argument.choices(definition.choices);
     }
     const argumentDefinition = definition as ArgumentDefinition;
     if (argumentDefinition.configure) {
@@ -107,20 +112,23 @@ export class Command<
     };
   }
 
-  private _configureOption(name: string, definition: ParameterDefinition) {
+  protected configureOption(name: string, definition: ParameterDefinition) {
     const optionDefinition = definition as OptionDefinition;
     const optionFlags = createOptionFlags(name, definition);
     const option = new Option(optionFlags, definition.description);
     definition.names = getParameterNames(
       name,
       definition,
-      this._definition.environmentPrefix
+      this.definition.environmentPrefix
     );
-    if (this._definition.useEnvironment || definition.environment) {
+    if (this.definition.useEnvironment || definition.environment) {
       option.env(definition.names?.env ?? '');
     }
     if (definition.defaultValue) {
       option.default(definition.defaultValue);
+    }
+    if (definition.choices) {
+      option.choices(definition.choices);
     }
     definition.names = getParameterNames(name, definition);
     if (optionDefinition.configure) {
@@ -134,23 +142,17 @@ export class Command<
       definition: optionDefinition,
       value: null,
     };
-  }
-
-  private _addSourceHandlers() {
-    for (const entry of Object.entries(this.context.parameters)) {
-      const context = entry[1];
-      if (context.type == 'option') {
-        this.on(`option:${context.name}`, (value: string) => {
-          if (context.definition.fromConfig) {
-            const results = context.definition.fromConfig(value);
-            context.value = results;
-            this._resolveParametersFromSource(results);
-          } else {
-            context.value = value;
-          }
-        });
+    const context = this.context.parameters[name];
+    this.on(`option:${option.name()}`, (value: string | undefined) => {
+      if (context.definition.fromConfig) {
+        const results = context.definition.fromConfig(value);
+        context.value = results;
+        this._resolveParametersFromSource(results);
+      } else {
+        // if value is undefined then it probably was a boolean flag
+        context.value = value ?? (option.negate ? false : true);
       }
-    }
+    });
   }
 
   private _handleFromConfigArguments(args: string[]) {
@@ -168,7 +170,7 @@ export class Command<
 
       if (
         !arg.value &&
-        (this._definition.useEnvironment || arg.definition.environment)
+        (this.definition.useEnvironment || arg.definition.environment)
       ) {
         arg.value = process.env[arg.definition.names?.env ?? ''];
       }
@@ -177,14 +179,14 @@ export class Command<
 
   private _resolveParametersFromSource(
     config: Record<string, unknown>,
-    source: 'config' | 'env' = 'config'
+    source: 'config' = 'config'
   ) {
     for (const [name, value] of Object.entries(config)) {
       // find parameters matching the config name override or name
       const context = Object.values(this.context.parameters).find(
         (param) => name == param.definition.names?.config ?? param.name
       );
-      if (context) {
+      if (context && context.definition.useConfig != false) {
         context.value = value;
         if (context.type == 'option') {
           this.setOptionValueWithSource(name, value, source);
@@ -230,7 +232,7 @@ export class Command<
   }
 
   protected parseProps() {
-    const schema = createValidationSchema(this._definition)?.passthrough();
+    const schema = createValidationSchema(this.definition)?.passthrough();
     const props = this._mapValuesToProps();
     if (schema) {
       return {
@@ -246,7 +248,7 @@ export class Command<
   }
 
   protected async parsePropsAsync() {
-    const schema = createValidationSchema(this._definition)?.passthrough();
+    const schema = createValidationSchema(this.definition)?.passthrough();
     const props = this._mapValuesToProps();
     if (schema) {
       return {
@@ -259,6 +261,12 @@ export class Command<
     return {
       ...props,
     };
+  }
+
+  override createHelp(): Help {
+    const help = new Help(this.definition);
+    const configuration = this.configureHelp();
+    return Object.assign(help, configuration);
   }
 
   override addOption(option: Option): this {
@@ -356,28 +364,34 @@ export class Command<
   }
 
   override parseOptions(argv: string[]): ParseOptionsResult {
-    if (this._definition.fromConfig) {
-      const results = this._definition.fromConfig();
+    if (this.definition.fromConfig) {
+      const results = this.definition.fromConfig();
       this._resolveParametersFromSource(results);
     }
-    this._addSourceHandlers();
     const { operands, unknown } = super.parseOptions(argv);
     this._handleFromConfigArguments(operands);
 
     // injecting parameters into arguments is not supported by commander
-    // so must be handled explicitly here with `mergeArgumentsFromConfig`
+    // so is handled here with `mergeArgumentsFromConfig`
     const resolvedOperands = mergeArgumentsFromConfig(
       operands,
       this.context.arguments
     );
     assignResolvedArgumentValues(resolvedOperands, this.context.arguments);
+
     const parametersResolved: ParametersResolved = {
       name: 'parameters-resolved',
       message: this.context,
     };
     this._eventBus.publish(parametersResolved);
+
+    // run one more time, just in case subscribers updated parameters
+    const finalResolvedOperands = mergeArgumentsFromConfig(
+      resolvedOperands,
+      this.context.arguments
+    );
     return {
-      operands: resolvedOperands,
+      operands: finalResolvedOperands,
       unknown,
     };
   }

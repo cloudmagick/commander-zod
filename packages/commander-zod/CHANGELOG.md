@@ -5,6 +5,14 @@ This file was generated using [@jscutlery/semver](https://github.com/jscutlery/s
 ## [0.3.2](https://github.com/cloudmagick/commander-zod/compare/commander-zod-0.3.1...commander-zod-0.3.2) (2022-03-07)
 
 
+<<<<<<< HEAD
+=======
+### Bug Fixes
+
+* allows `parameters-resolved` subscribers to possibly update arguments ([4ca84ce](https://github.com/cloudmagick/commander-zod/commit/4ca84ce9b72447bb4157884851b0a0135abdfd9f))
+
+
+>>>>>>> 8766c58 (chore(commander-zod): release version 0.3.2)
 
 ## [0.3.1](https://github.com/cloudmagick/commander-zod/compare/commander-zod-0.3.0...commander-zod-0.3.1) (2022-03-07)
 

@@ -1,0 +1,41 @@
+{
+  "root": "packages/commander-zod-prompt",
+  "sourceRoot": "packages/commander-zod-prompt/src",
+  "projectType": "library",
+  "targets": {
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["packages/commander-zod-prompt/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/packages/commander-zod-prompt"],
+      "options": {
+        "jestConfig": "packages/commander-zod-prompt/jest.config.js",
+        "passWithNoTests": true,
+        "codeCoverage": true
+      }
+    },
+    "build": {
+      "executor": "@nrwl/node:package",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/commander-zod-prompt",
+        "tsConfig": "packages/commander-zod-prompt/tsconfig.lib.json",
+        "packageJson": "packages/commander-zod-prompt/package.json",
+        "main": "packages/commander-zod-prompt/src/index.ts",
+        "assets": ["packages/commander-zod-prompt/*.md"]
+      }
+    },
+    "version": {
+      "executor": "@jscutlery/semver:version",
+      "options": {
+        "commitMessageFormat": "chore(${projectName}): release version ${version}"
+      }
+    }
+  },
+  "tags": []
+}
