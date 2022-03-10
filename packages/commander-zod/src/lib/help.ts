@@ -1,4 +1,5 @@
 import { Argument, Help as BaseHelp, Option } from 'commander';
+import { Command } from './command';
 import { CommandDefinition } from './types';
 
 export class Help extends BaseHelp {
@@ -7,6 +8,19 @@ export class Help extends BaseHelp {
   constructor(definition: CommandDefinition) {
     super();
     this.definition = definition;
+  }
+
+  override visibleArguments(cmd: Command): Argument[] {
+    const args = super.visibleArguments(cmd);
+    return [
+      ...new Set(
+        args.concat(
+          Object.values(cmd.context.arguments)
+            .filter((arg) => this.argumentDescription(arg.parameter)?.length)
+            .map((arg) => arg.parameter)
+        )
+      ),
+    ];
   }
 
   override optionDescription(option: Option): string {

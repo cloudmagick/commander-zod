@@ -36,6 +36,7 @@ it('should call action handler with parsed arguments', () => {
   });
 
   command.parse(['node', 'test', '1', '2']);
+  expect.assertions(1);
 });
 
 it('should call action handler with parsed options and arguments', () => {
@@ -163,7 +164,7 @@ it('should pass options from preAction hook to nested commmands', () => {
   })
     .passThroughOptions()
     .enablePositionalOptions()
-    .hook('preAction', (props, _, __, target) => {
+    .hook('preAction', (props, _, __, ___, target) => {
       actual.props = {
         ...props,
       };
@@ -186,12 +187,15 @@ it('should pass options from preAction hook to nested commmands', () => {
         schema: numberSchema.array().optional(),
       },
     },
-  }).action((props, extras) => {
+  }).action((props, extras, parent) => {
     actual.props = {
       ...props,
     };
     actual.extras = {
       ...extras,
+    };
+    actual.parent = {
+      ...parent.props,
     };
   });
 
@@ -218,6 +222,10 @@ it('should pass options from preAction hook to nested commmands', () => {
     extras: {
       args: [],
       props: { foo: 1, bar: 2 },
+    },
+    parent: {
+      foo: 1,
+      bar: 2,
     },
   });
 });
@@ -298,16 +306,5 @@ it('should call async nested actions', async () => {
     '--bar',
     'override',
   ]);
-  await parent.parseAsync([
-    'node',
-    'parent',
-    'nested2',
-    '--fizz',
-    '3',
-    '--buzz',
-    '4',
-    '5',
-    '6',
-  ]);
-  expect.assertions(2);
+  expect.assertions(1);
 });

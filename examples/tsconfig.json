@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc/examples",
+    "module": "commonjs",
+    "types": ["node"]
+  },
+  "files": [],
+  "include": ["**/*.ts", "../index.ts"]
+}

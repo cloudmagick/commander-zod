@@ -153,10 +153,11 @@ export function createOptionFlags(
   const optionTermConstraint = definition.required
     ? `<${optionTerm}>`
     : `[${optionTerm}]`;
+  const isBooleanFlag = optionDefinition.negate || optionDefinition.boolean;
   const optionFlags = [
     names.alias ? `-${names.alias}` : null,
     optionDefinition.negate ? `--no-${names.param}` : `--${names.param}`,
-    optionDefinition.negate ? null : optionTermConstraint,
+    isBooleanFlag ? null : optionTermConstraint,
   ]
     .filter((opt) => !!opt)
     .join(' ');

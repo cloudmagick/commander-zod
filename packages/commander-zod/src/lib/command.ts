@@ -8,6 +8,7 @@ import {
   ParseOptionsResult,
 } from 'commander';
 import { EventEmitter } from 'stream';
+import { z } from 'zod';
 import { EventBus, ParametersResolved } from './events';
 import { Help } from './help';
 import {
@@ -22,10 +23,8 @@ import {
   ArgumentDefinition,
   CommandContext,
   CommandDefinition,
-  CommandProps,
   Event,
   EventName,
-  ExtraProps,
   OptionDefinition,
   ParameterDefinition,
 } from './types';
@@ -33,6 +32,62 @@ import {
   validateParameterName,
   validateSingleVariadicArgument,
 } from './validate';
+
+declare module 'commander' {
+  interface Command {
+    _hasHelpOption: boolean;
+    _helpLongFlag: string;
+    _helpShortFlag: string;
+
+    _exit(existCode: number, code: string, message: string): void;
+
+    // Hack!
+    // Desire: Allow parsing to be extended by derived classes.
+    //
+    // Problem: The `parse*` methods in the Commander base class call a private method
+    // to do some pre-parse argument processing to support environments outside of Node (i.e. Electron),
+    // but do not expose this method on their public interface.
+
+    // Solution: To ensure our parsing behaves similarly to Commander's base implementation
+    // this calls the private method directly.
+    // TODO: Open a ticket to inquire on a better approach or feature request.
+    _prepareUserArgs(
+      argv?: readonly string[],
+      options?: ParseOptions
+    ): string[];
+  }
+}
+
+export type ExtraProps = {
+  extras: {
+    args: string[];
+    props: Record<string, unknown>;
+  };
+};
+export type ParentProps<T extends CommandDefinition> = T extends {
+  parentCommand: infer Base;
+}
+  ? Base extends Command<infer Schema>
+    ? {
+        parent: CommandProps<Schema>;
+      }
+    : { parent: Record<string, unknown> }
+  : { parent: Record<string, unknown> };
+export type CommandProps<T extends CommandDefinition = CommandDefinition> =
+  T extends {
+    parameters: infer Def;
+  }
+    ? {
+        props: {
+          [key in keyof Def]: Def[key] extends { schema: infer Schema }
+            ? Schema extends z.ZodType<unknown>
+              ? Schema['_output']
+              : string
+            : string;
+        };
+      } & ParentProps<T> &
+        ExtraProps
+    : { props: Record<string, unknown> } & ParentProps<T> & ExtraProps;
 
 export class Command<
   TDefinition extends CommandDefinition = CommandDefinition
@@ -43,8 +98,10 @@ export class Command<
     options: {},
     parameters: {},
   };
-  private _shouldUsePromise = false;
+  protected usesAsyncContext = false;
   private _eventBus: EventBus;
+  private _parseOptionsResult?: ParseOptionsResult;
+  private _hasParseExecuted = false;
 
   constructor(config: TDefinition, eventBus?: EventBus) {
     super(config.name);
@@ -121,7 +178,10 @@ export class Command<
       definition,
       this.definition.environmentPrefix
     );
-    if (this.definition.useEnvironment || definition.environment) {
+    if (
+      (this.definition.useEnvironment && definition.environment != false) ||
+      definition.environment
+    ) {
       option.env(definition.names?.env ?? '');
     }
     if (definition.defaultValue) {
@@ -147,7 +207,7 @@ export class Command<
       if (context.definition.fromConfig) {
         const results = context.definition.fromConfig(value);
         context.value = results;
-        this._resolveParametersFromSource(results);
+        this._resolveParametersFromSources(results);
       } else {
         // if value is undefined then it probably was a boolean flag
         context.value = value ?? (option.negate ? false : true);
@@ -165,7 +225,7 @@ export class Command<
       if (arg.definition.fromConfig) {
         arg.value = argValue;
         const result = arg.definition.fromConfig(argValue);
-        this._resolveParametersFromSource(result);
+        this._resolveParametersFromSources(result);
       }
 
       if (
@@ -177,19 +237,30 @@ export class Command<
     }
   }
 
-  private _resolveParametersFromSource(
-    config: Record<string, unknown>,
-    source: 'config' = 'config'
+  private _resolveParametersFromSources(
+    source: Record<string, unknown>,
+    type: 'config' | 'env' = 'config'
   ) {
-    for (const [name, value] of Object.entries(config)) {
+    for (const [name, value] of Object.entries(source)) {
       // find parameters matching the config name override or name
       const context = Object.values(this.context.parameters).find(
-        (param) => name == param.definition.names?.config ?? param.name
+        (param) => name == param.definition.names?.[type] ?? param.name
       );
+      if (
+        context &&
+        ((this.definition.useEnvironment &&
+          context.definition.environment != false) ||
+          context.definition.environment)
+      ) {
+        context.value = value;
+        if (context.type == 'option') {
+          this.setOptionValueWithSource(name, value, 'env');
+        }
+      }
       if (context && context.definition.useConfig != false) {
         context.value = value;
         if (context.type == 'option') {
-          this.setOptionValueWithSource(name, value, source);
+          this.setOptionValueWithSource(name, value, 'config');
         }
       } else {
         this.setOptionValueWithSource(name, value, 'config');
@@ -231,36 +302,51 @@ export class Command<
     return props;
   }
 
-  protected parseProps() {
+  protected parseProps(): CommandProps {
     const schema = createValidationSchema(this.definition)?.passthrough();
     const props = this._mapValuesToProps();
-    if (schema) {
-      return {
-        props: schema.parse(props.props),
-        extras: {
-          ...props.extras,
-        },
-      };
-    }
     return {
-      ...props,
+      props: schema ? schema.parse(props.props) : { ...props.props },
+      extras: {
+        ...props.extras,
+      },
+      parent:
+        this.parent && (this.parent as Command).parseProps
+          ? (this.parent as Command).parseProps()
+          : {},
     };
   }
 
-  protected async parsePropsAsync() {
+  protected async parsePropsAsync(): Promise<CommandProps> {
     const schema = createValidationSchema(this.definition)?.passthrough();
+
     const props = this._mapValuesToProps();
-    if (schema) {
-      return {
-        props: await schema.parseAsync(props.props),
-        extras: {
-          ...props.extras,
-        },
-      };
-    }
     return {
-      ...props,
+      props: schema ? await schema.parseAsync(props.props) : { ...props.props },
+      extras: {
+        ...props.extras,
+      },
+      parent:
+        this.parent && (this.parent as Command).parsePropsAsync
+          ? await (this.parent as Command).parsePropsAsync()
+          : {},
     };
+  }
+
+  protected isSynchronousParseValid() {
+    return !this.usesAsyncContext;
+  }
+
+  protected outputHelpIfRequested(params: string[]) {
+    const hasHelpOption =
+      this._hasHelpOption &&
+      params.find(
+        (param) => param == this._helpLongFlag || param == this._helpShortFlag
+      );
+    if (hasHelpOption) {
+      this.outputHelp();
+      this._exit(0, 'commander.helpDisplayed', '(outputHelp)');
+    }
   }
 
   override createHelp(): Help {
@@ -316,13 +402,14 @@ export class Command<
 
   override action(fn: (...args: any[]) => void | Promise<void>): this {
     super.action(() => {
-      if (this._shouldUsePromise) {
-        return this.parsePropsAsync().then((props) =>
-          fn(props.props, props.extras, this)
-        );
+      if (this.usesAsyncContext) {
+        return this.parsePropsAsync().then((res) => {
+          const { props, extras, parent } = res;
+          fn(props, extras, parent, this);
+        });
       } else {
-        const { props, extras } = this.parseProps();
-        fn(props, extras, this);
+        const { props, extras, parent } = this.parseProps();
+        fn(props, extras, parent, this);
       }
     });
     return this;
@@ -333,40 +420,122 @@ export class Command<
     fn: (...args: any[]) => void | Promise<void>
   ): this {
     super.hook(event, (thisCommand, srcCommand) => {
-      if (this._shouldUsePromise) {
-        return this.parsePropsAsync().then((props) =>
-          fn(props.props, props.extras, thisCommand, srcCommand)
-        );
+      if (this.usesAsyncContext) {
+        return this.parsePropsAsync().then((res) => {
+          const { props, extras, parent } = res;
+          fn(props, extras, parent, thisCommand, srcCommand);
+        });
       } else {
-        const { props, extras } = this.parseProps();
-        fn(props, extras, thisCommand, srcCommand);
+        const { props, extras, parent } = this.parseProps();
+        fn(props, extras, thisCommand, parent, srcCommand);
       }
     });
     return this;
+  }
+
+  private _enableAsyncContext() {
+    this.usesAsyncContext = true;
+    const children = this.commands as Command[];
+    for (const child of children) {
+      child.usesAsyncContext = true;
+    }
   }
 
   override async parseAsync(
     argv?: readonly string[],
     options?: ParseOptions
   ): Promise<this> {
-    const children = this.commands as Command[];
-    for (const child of children) {
-      child._shouldUsePromise = this._shouldUsePromise;
-    }
-    this._shouldUsePromise = true;
+    // Desire: Here we want to explicitly use promises for parsing parameters to give
+    // derived classes the option of using asynchronous methods during parameter
+    // parsing.
+    //
+    // Problem: The Commander API doesn't allow you to use promises during the
+    // option parsing phase.
+
+    // Solution: In order to skirt around this, we call our own `parseOptionsAsync`
+    // and then cache the result. Then when Commander calls the synchronous version
+    // `parseOptions` we can just return the cached result we already processed.
+    this._enableAsyncContext();
+    this.validateParse();
+    const preparedArgs = this._prepareUserArgs(argv, options) as string[];
+    const { operands, unknown } = await this.parseOptionsAsync(preparedArgs);
+    this._parseOptionsResult = {
+      operands,
+      unknown,
+    };
     await super.parseAsync(argv, options);
+    this._hasParseExecuted = true;
     return this;
+  }
+
+  protected validateParse() {
+    if (this._hasParseExecuted) {
+      this.error(
+        'Parsing has already been executed. Please instantiate a new command to execute parsing again.'
+      );
+    }
+    if (!this.usesAsyncContext) {
+      const children = this.commands as Command[];
+      let isParseValid = this.isSynchronousParseValid();
+      for (const child of children) {
+        isParseValid &&= child.isSynchronousParseValid();
+      }
+      if (!isParseValid) {
+        this.error(
+          `Synchronous parsing is invalid for this command [${this.name()}]. Use the parseAsync method instead.`
+        );
+      }
+    }
   }
 
   override parse(argv?: readonly string[], options?: ParseOptions): this {
+    this.validateParse();
     super.parse(argv, options);
+    this._hasParseExecuted = true;
     return this;
   }
 
+  protected async parseNestedCommandOptions(
+    operands: string[],
+    unknown: string[]
+  ) {
+    const children = this.commands as (Command | BaseCommand)[];
+    const possibleChildOperation = operands[0];
+    const childCommand = children.find(
+      (cmd) => cmd.name() == possibleChildOperation
+    );
+    if (childCommand && (childCommand as Command).parseOptionsAsync) {
+      await (childCommand as Command).parseOptionsAsync([
+        ...operands.slice(1),
+        ...unknown,
+      ]);
+    }
+  }
+
+  protected async parseOptionsAsync(
+    argv: string[]
+  ): Promise<ParseOptionsResult> {
+    const { operands, unknown } = this.parseOptions(argv);
+    if (!this.commands.some((cmd) => cmd.name() == operands?.[0])) {
+      this.outputHelpIfRequested(unknown);
+    }
+    await this.parseNestedCommandOptions(operands, unknown);
+
+    const finalResolvedOperands = mergeArgumentsFromConfig(
+      operands,
+      this.context.arguments
+    );
+
+    return { operands: finalResolvedOperands, unknown };
+  }
+
   override parseOptions(argv: string[]): ParseOptionsResult {
+    if (this._parseOptionsResult) {
+      return this._parseOptionsResult;
+    }
     if (this.definition.fromConfig) {
       const results = this.definition.fromConfig();
-      this._resolveParametersFromSource(results);
+      this._resolveParametersFromSources(results);
     }
     const { operands, unknown } = super.parseOptions(argv);
     this._handleFromConfigArguments(operands);
@@ -412,6 +581,7 @@ export interface Command<
     listener: (
       props: CommandProps<TDefinition>['props'],
       extras: CommandProps<TDefinition>['extras'],
+      parent: CommandProps<TDefinition>['parent'],
       thisCommand: Command,
       actionCommand: Command
     ) => void | Promise<void>
@@ -421,6 +591,7 @@ export interface Command<
     fn: (
       props: CommandProps<TDefinition>['props'],
       extras: CommandProps<TDefinition>['extras'],
+      parent: CommandProps<TDefinition>['parent'],
       command: Command
     ) => void | Promise<void>
   ): this;
