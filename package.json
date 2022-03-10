@@ -6,7 +6,8 @@
     "test": "nx run-many --all --target=test",
     "build": "nx run-many --all --target=build",
     "version": "nx run-many --all --target=version",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "example": "cd examples && ts-node -r tsconfig-paths/register"
   },
   "private": true,
   "devDependencies": {
@@ -31,6 +32,7 @@
     "eslint": "~8.7.0",
     "eslint-config-prettier": "8.1.0",
     "husky": "^7.0.4",
+    "inquirer-date-prompt": "^2.0.1",
     "jest": "^27.5.1",
     "jest-junit": "^13.0.0",
     "object-hash": "^3.0.0",

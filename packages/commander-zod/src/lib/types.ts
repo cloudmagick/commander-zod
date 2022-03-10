@@ -154,7 +154,13 @@ export interface OptionDefinition extends BaseDefinition {
   /** Configures command as an `Option` */
   type: 'option';
 
-  /** Should the option be negated (i.e. `--no-sauce`)*/
+  /** Create option as a boolean flag */
+  boolean?: boolean;
+
+  /** Should the option be negated (i.e. `--no-sauce`)
+   *
+   * This will automatically create an option as a boolean flag
+   */
   negate?: boolean;
 
   names?: ParameterNameDefinitions;
@@ -176,27 +182,6 @@ export type ParameterNameDefinitions = {
   /** Name to use for config file lookups */
   config?: string;
 };
-
-export type ExtraProps = {
-  extras: {
-    args: string[];
-    props: Record<string, unknown>;
-  };
-};
-export type CommandProps<T extends CommandDefinition = CommandDefinition> =
-  T extends {
-    parameters: infer Def;
-  }
-    ? {
-        props: {
-          [key in keyof Def]: Def[key] extends { schema: infer Schema }
-            ? Schema extends z.ZodType<unknown>
-              ? Schema['_output']
-              : string
-            : string;
-        };
-      } & ExtraProps
-    : { props: Record<string, unknown> } & ExtraProps;
 
 export type ArgumentDefinitions = {
   [key: string]: ArgumentDefinition;

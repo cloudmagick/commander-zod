@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ParseOptions, ParseOptionsResult } from 'commander';
 import { Command, EventBus, mergeArgumentsFromConfig } from 'commander-zod';
 import * as defaultInquirer from 'inquirer';
 import { getPrompt } from './helpers';
@@ -18,8 +17,8 @@ export function withPrompt<T extends CommandConstructor>(
   inquirer = defaultInquirer
 ) {
   return class extends CommandClass {
-    private _parseOptionsResult?: ParseOptionsResult;
     private _inquirer = inquirer;
+    private _promptsEnabled = true;
 
     constructor(...args: any[]) {
       super(...args);
@@ -35,6 +34,7 @@ export function withPrompt<T extends CommandConstructor>(
           type: 'option',
           negate: true,
           description: 'Disable use of interactive prompt',
+          environment: true,
         });
       }
 
@@ -51,6 +51,7 @@ export function withPrompt<T extends CommandConstructor>(
     private async _executePromptsForUnresolvedArguments() {
       const definition = this.definition as CommandDefinition;
       if (
+        this._promptsEnabled &&
         definition.addDisableInteractivePromptFlag &&
         this.context.options.interactive.value == false
       ) {
@@ -73,55 +74,28 @@ export function withPrompt<T extends CommandConstructor>(
       }
     }
 
-    private async _parseOptionsAsync(argv: string[]) {
-      const { operands, unknown } = super.parseOptions(argv);
+    override async parseOptionsAsync(argv: string[]) {
+      const { operands, unknown } = await super.parseOptionsAsync(argv);
       await this._executePromptsForUnresolvedArguments();
       const finalResolvedOperands = mergeArgumentsFromConfig(
         operands,
         this.context.arguments
       );
-      this._parseOptionsResult = {
-        operands: finalResolvedOperands,
-        unknown,
-      };
+      return { operands: finalResolvedOperands, unknown };
     }
 
-    override parseOptions(argv: string[]): ParseOptionsResult {
-      if (this._parseOptionsResult) {
-        return this._parseOptionsResult;
-      }
-      return super.parseOptions(argv);
+    protected override isSynchronousParseValid(): boolean {
+      return false;
     }
 
-    override async parseAsync(
-      argv?: readonly string[],
-      options?: ParseOptions
-    ): Promise<this> {
-      // major hack!
-      // Here we want to explicitly use promises since inquirer requires this for prompts.
-      // The problem is the Commander API doesn't allow you to use promises during the
-      // option parsing phase. In order to skirt around this, we call our internal
-      // `parseOptionsAsync` and then cache the result. Then when Commander calls the
-      // synchronous version `parseOptions` we can just return the cached result
-      // we already processed.
-      //
-      // Now for the really major hack (above design works with the public Command interface).
-      // In the `parse*` methods Commander calls a private method to do some argument processing
-      // to support other environments, and we want to ensure our `parseOptionsAsync` call behaves
-      // similarly even though we're adding our own customizations. For now, this calls the private
-      // method directly to align behavior with the currrent Commander implementation.
-      // TODO: Open a ticket to inquire on a better approach or feature request.
-      const prepareUserArgs = (this as any)['_prepareUserArgs'](
-        argv,
-        options
-      ) as string[];
-      await this._parseOptionsAsync(prepareUserArgs);
-      return super.parseAsync(argv, options);
+    disablePrompts() {
+      this._promptsEnabled = false;
+      return this;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    override parse(argv?: readonly string[], options?: ParseOptions): this {
-      this.error('Synchronous parse method is not allowed when using prompts');
+    enablePrompts() {
+      this._promptsEnabled = true;
+      return this;
     }
   } as PromptableCommandConstructor;
 }
